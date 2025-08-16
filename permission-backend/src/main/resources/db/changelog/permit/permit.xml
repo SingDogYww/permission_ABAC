@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                   https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="0" author="admin">
+        <createTable tableName="role">
+            <column name="id" type="int" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="code" type="varchar(50)"/>
+            <column name="name" type="varchar(50)"/>
+            <column name="desc" type="varchar(200)"/>
+        </createTable>
+        <createTable tableName="action">
+            <column name="id" type="int" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="url" type="varchar(100)"/>
+            <column name="module" type="varchar" remarks="模块"/>
+            <column name="action" type="varchar(100)" remarks="操作，delete"/>
+            <column name="desc" type="varchar(200)"/>
+        </createTable>
+    </changeSet>
+</databaseChangeLog>
