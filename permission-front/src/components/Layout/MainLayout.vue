@@ -283,7 +283,7 @@ const toggleMenu = (menu: MenuType) => {
 
 const showNotifications = () => {
   // TODO: 实现通知面板显示逻辑
-  console.log('显示通知')
+  // 显示通知
 }
 
 const goToProfile = () => {

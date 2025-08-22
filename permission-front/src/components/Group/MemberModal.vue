@@ -60,46 +60,82 @@
           </div>
 
           <div v-else class="members-list">
-            <div 
-              v-for="member in filteredMembers" 
-              :key="member.id"
-              class="member-item"
-            >
-              <div class="member-info">
-                <img 
-                  :src="member.avatar || defaultAvatar" 
-                  :alt="member.name"
-                  class="member-avatar"
-                  @error="handleAvatarError"
-                />
-                <div class="member-details">
-                  <div class="member-name">{{ member.name }}</div>
-                  <div class="member-email">{{ member.email }}</div>
-                  <div class="member-join-time">
-                    加入时间: {{ member.joinTime }}
-                  </div>
-                </div>
-              </div>
-
-              <div class="member-actions">
-                <select 
-                  :value="member.memberType" 
-                  class="role-select"
-                  @change="updateMemberRole(member, $event.target.value)"
-                >
-                  <option value="MEMBER">普通成员</option>
-                  <option value="ADMIN">组管理员</option>
-                  <option value="OWNER">组拥有者</option>
-                </select>
-                
-                <button 
-                  class="action-btn danger small"
-                  @click="removeMember(member)"
-                  title="移除成员"
-                >
-                  <font-awesome-icon icon="user-minus" />
-                </button>
-              </div>
+            <div class="table-container">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>
+                      <input 
+                        type="checkbox" 
+                        :checked="isAllMembersSelected"
+                        :indeterminate="isSomeMembersSelected"
+                        @change="handleSelectAllMembers" 
+                      />
+                    </th>
+                    <th>用户信息</th>
+                    <th>成员类型</th>
+                    <th>用户组</th>
+                    <th>加入时间</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="member in filteredMembers" :key="member.id" class="table-row">
+                    <td>
+                      <input type="checkbox" :value="member.id" v-model="selectedMembers" />
+                    </td>
+                    <td>
+                      <div class="user-info">
+                        <img 
+                          :src="getUserAvatar(member)" 
+                          :alt="member.name"
+                          class="user-avatar"
+                          @error="handleAvatarError"
+                        />
+                        <div class="user-details">
+                          <div class="user-name">{{ member.name }}</div>
+                          <div class="user-email">{{ member.email }}</div>
+                          <div class="user-phone">{{ member.phone || '暂无' }}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <span class="member-type-badge" :class="`type-${member.memberType.toLowerCase()}`">
+                        {{ getRoleName(member.memberType) }}
+                      </span>
+                    </td>
+                    <td>
+                      <div class="user-groups">
+                        <span class="group-tag">{{ member.department || '暂无部门' }}</span>
+                      </div>
+                    </td>
+                    <td>
+                      <span class="join-time">{{ member.joinTime }}</span>
+                    </td>
+                    <td>
+                      <div class="action-buttons">
+                        <select 
+                          :value="member.memberType" 
+                          class="role-select"
+                          @change="updateMemberRole(member, $event.target.value)"
+                        >
+                          <option value="MEMBER">普通成员</option>
+                          <option value="ADMIN">组管理员</option>
+                          <option value="OWNER">组拥有者</option>
+                        </select>
+                        
+                        <button 
+                          class="action-icon danger" 
+                          @click="removeMember(member)"
+                          title="移除成员"
+                        >
+                          <font-awesome-icon icon="user-minus" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
@@ -199,7 +235,7 @@ const props = defineProps<{
 // Emits
 const emit = defineEmits<{
   close: []
-  submit: [data: any]
+  update: [data: any]
 }>()
 
 // 响应式数据
@@ -209,59 +245,172 @@ const memberTypeFilter = ref('')
 const userSearchKeyword = ref('')
 const defaultRole = ref('MEMBER')
 const selectedUsers = ref<string[]>([])
+const selectedMembers = ref<string[]>([])
 
-// 模拟数据
+// 模拟数据 - 管理员组成员
 const currentMembers = ref([
   {
     id: '1',
-    name: '张三',
-    email: 'zhangsan@example.com',
+    name: '刑青',
+    email: 'xingqing@example.com',
+    phone: '13800138001',
     avatar: '',
     memberType: 'OWNER',
-    joinTime: '2024-01-15 10:30:00',
-    department: '技术部'
+    joinTime: '2024-01-01 08:00:00',
+    department: '管理组'
   },
   {
     id: '2',
-    name: '李四',
-    email: 'lisi@example.com',
+    name: '系统管理员',
+    email: 'admin@example.com',
+    phone: '13800138002',
     avatar: '',
     memberType: 'ADMIN',
-    joinTime: '2024-01-16 14:20:00',
+    joinTime: '2024-01-01 08:00:00',
     department: '技术部'
   },
   {
     id: '3',
-    name: '王五',
-    email: 'wangwu@example.com',
+    name: '安全管理员',
+    email: 'security@example.com',
+    phone: '13800138003',
+    avatar: '',
+    memberType: 'ADMIN',
+    joinTime: '2024-01-02 09:00:00',
+    department: '安全部'
+  },
+  {
+    id: '4',
+    name: '数据管理员',
+    email: 'dataadmin@example.com',
+    phone: '13800138004',
+    avatar: '',
+    memberType: 'ADMIN',
+    joinTime: '2024-01-03 10:00:00',
+    department: '技术部'
+  },
+  {
+    id: '5',
+    name: '运维管理员',
+    email: 'ops@example.com',
+    phone: '13800138005',
+    avatar: '',
+    memberType: 'ADMIN',
+    joinTime: '2024-01-05 14:30:00',
+    department: '运维部'
+  },
+  {
+    id: '6',
+    name: '审计员',
+    email: 'auditor@example.com',
+    phone: '13800138006',
     avatar: '',
     memberType: 'MEMBER',
-    joinTime: '2024-01-18 09:15:00',
+    joinTime: '2024-01-10 11:20:00',
+    department: '审计部'
+  },
+  {
+    id: '7',
+    name: '备份管理员',
+    email: 'backup@example.com',
+    phone: '13800138007',
+    avatar: '',
+    memberType: 'MEMBER',
+    joinTime: '2024-01-15 16:45:00',
     department: '技术部'
+  },
+  {
+    id: '8',
+    name: '监控管理员',
+    email: 'monitor@example.com',
+    phone: '13800138008',
+    avatar: '',
+    memberType: 'MEMBER',
+    joinTime: '2024-01-20 13:15:00',
+    department: '运维部'
   }
 ])
 
 const allUsers = ref([
   {
-    id: '4',
-    name: '赵六',
-    email: 'zhaoliu@example.com',
+    id: '9',
+    name: '张伟',
+    email: 'zhangwei@example.com',
+    phone: '13800138009',
+    avatar: '',
+    department: '技术部'
+  },
+  {
+    id: '10',
+    name: '李娜',
+    email: 'lina@example.com',
+    phone: '13800138010',
     avatar: '',
     department: '产品部'
   },
   {
-    id: '5',
-    name: '孙七',
-    email: 'sunqi@example.com',
+    id: '11',
+    name: '王强',
+    email: 'wangqiang@example.com',
+    phone: '13800138011',
     avatar: '',
     department: '设计部'
   },
   {
-    id: '6',
-    name: '周八',
-    email: 'zhouba@example.com',
+    id: '12',
+    name: '赵敏',
+    email: 'zhaomin@example.com',
+    phone: '13800138012',
     avatar: '',
     department: '市场部'
+  },
+  {
+    id: '13',
+    name: '孙磊',
+    email: 'sunlei@example.com',
+    phone: '13800138013',
+    avatar: '',
+    department: '财务部'
+  },
+  {
+    id: '14',
+    name: '周静',
+    email: 'zhoujing@example.com',
+    phone: '13800138014',
+    avatar: '',
+    department: '人事部'
+  },
+  {
+    id: '15',
+    name: '吴彬',
+    email: 'wubin@example.com',
+    phone: '13800138015',
+    avatar: '',
+    department: '法务部'
+  },
+  {
+    id: '16',
+    name: '郑华',
+    email: 'zhenghua@example.com',
+    phone: '13800138016',
+    avatar: '',
+    department: '采购部'
+  },
+  {
+    id: '17',
+    name: '刘洋',
+    email: 'liuyang@example.com',
+    phone: '13800138017',
+    avatar: '',
+    department: '质量部'
+  },
+  {
+    id: '18',
+    name: '陈晨',
+    email: 'chenchen@example.com',
+    phone: '13800138018',
+    avatar: '',
+    department: '研发部'
   }
 ])
 
@@ -299,10 +448,32 @@ const availableUsers = computed(() => {
   return result
 })
 
+const isAllMembersSelected = computed(() => {
+  return filteredMembers.value.length > 0 && 
+         selectedMembers.value.length === filteredMembers.value.length
+})
+
+const isSomeMembersSelected = computed(() => {
+  return selectedMembers.value.length > 0 && 
+         selectedMembers.value.length < filteredMembers.value.length
+})
+
 // 方法
+const getUserAvatar = (user: any) => {
+  return user.avatar || defaultAvatar
+}
+
+const handleSelectAllMembers = () => {
+  if (isAllMembersSelected.value) {
+    selectedMembers.value = []
+  } else {
+    selectedMembers.value = filteredMembers.value.map(m => m.id)
+  }
+}
+
 const updateMemberRole = (member: any, newRole: string) => {
   member.memberType = newRole
-  console.log('更新成员权限:', member.name, '→', newRole)
+  // 更新成员权限
   emit('update', { type: 'role_change', member, newRole })
   // TODO: 调用API更新成员权限
 }
@@ -311,7 +482,7 @@ const removeMember = (member: any) => {
   const index = currentMembers.value.findIndex(m => m.id === member.id)
   if (index > -1) {
     currentMembers.value.splice(index, 1)
-    console.log('移除成员:', member.name)
+    // 移除成员
     emit('update', { type: 'remove_member', member })
     // TODO: 调用API移除成员
   }
@@ -338,7 +509,7 @@ const addSelectedUsers = () => {
     currentMembers.value.push(newMember)
   })
 
-  console.log('批量添加成员:', usersToAdd.length, '个用户')
+  // 批量添加成员
   emit('update', { type: 'add_members', members: usersToAdd, role: defaultRole.value })
   
   // 重置选择
@@ -375,6 +546,7 @@ watch(() => props.visible, (newVisible) => {
   if (newVisible) {
     activeTab.value = 'members'
     selectedUsers.value = []
+    selectedMembers.value = []
     memberSearchKeyword.value = ''
     userSearchKeyword.value = ''
     memberTypeFilter.value = ''
@@ -548,13 +720,19 @@ watch(() => props.visible, (newVisible) => {
 }
 
 .filter-select {
-  padding: 10px 12px;
+  padding: 12px 16px;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(0, 238, 255, 0.2);
-  border-radius: 6px;
+  border-radius: 8px;
   color: #fff;
   font-size: 14px;
   cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: #00eeff;
 }
 
 .filter-select option {
@@ -596,88 +774,136 @@ watch(() => props.visible, (newVisible) => {
   font-size: 14px;
 }
 
-.members-list,
-.users-list {
+.members-list {
   flex: 1;
   overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
 }
 
-.member-item,
-.user-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 16px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(0, 238, 255, 0.1);
+.table-container {
+  background: rgba(15, 23, 42, 0.8);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(0, 238, 255, 0.2);
   border-radius: 8px;
+  overflow: hidden;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.data-table th {
+  background: rgba(0, 238, 255, 0.1);
+  color: #00eeff;
+  font-weight: 600;
+  padding: 12px 16px;
+  text-align: left;
+  border-bottom: 1px solid rgba(0, 238, 255, 0.2);
+  font-size: 14px;
+}
+
+.data-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.table-row {
   transition: all 0.3s ease;
 }
 
-.user-item {
-  cursor: pointer;
+.table-row:hover {
+  background: rgba(0, 238, 255, 0.05);
 }
 
-.member-item:hover,
-.user-item:hover {
-  background: rgba(0, 238, 255, 0.1);
-  border-color: rgba(0, 238, 255, 0.3);
-}
-
-.user-item.selected {
-  background: rgba(0, 238, 255, 0.2);
-  border-color: rgba(0, 238, 255, 0.4);
-}
-
-.member-info,
 .user-info {
   display: flex;
   align-items: center;
   gap: 12px;
 }
 
-.member-avatar,
 .user-avatar {
   width: 40px;
   height: 40px;
   border-radius: 50%;
   border: 2px solid rgba(0, 238, 255, 0.3);
   object-fit: cover;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
 }
 
-.member-details,
 .user-details {
   display: flex;
   flex-direction: column;
   gap: 2px;
 }
 
-.member-name,
 .user-name {
   font-weight: 500;
   color: #fff;
   font-size: 14px;
 }
 
-.member-email,
-.user-email {
+.user-email,
+.user-phone {
   font-size: 12px;
   color: rgba(255, 255, 255, 0.6);
 }
 
-.member-join-time,
-.user-department {
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.5);
+.member-type-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  gap: 6px;
 }
 
-.member-actions {
+.type-owner {
+  background: rgba(255, 193, 7, 0.2);
+  color: #ffc107;
+  border: 1px solid rgba(255, 193, 7, 0.3);
+}
+
+.type-admin {
+  background: rgba(0, 123, 255, 0.2);
+  color: #007bff;
+  border: 1px solid rgba(0, 123, 255, 0.3);
+}
+
+.type-member {
+  background: rgba(108, 117, 125, 0.2);
+  color: #6c757d;
+  border: 1px solid rgba(108, 117, 125, 0.3);
+}
+
+.user-groups {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.group-tag {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  background: rgba(0, 238, 255, 0.15);
+  color: #00eeff;
+  border: 1px solid rgba(0, 238, 255, 0.3);
+  white-space: nowrap;
+}
+
+.join-time {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.action-buttons {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
 }
 
 .role-select {
@@ -695,7 +921,7 @@ watch(() => props.visible, (newVisible) => {
   color: #fff;
 }
 
-.action-btn {
+.action-icon {
   padding: 6px 8px;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(0, 238, 255, 0.3);
@@ -706,18 +932,52 @@ watch(() => props.visible, (newVisible) => {
   font-size: 12px;
 }
 
-.action-btn.danger {
+.action-icon.danger {
   color: #e74c3c;
   border-color: rgba(231, 76, 60, 0.3);
 }
 
-.action-btn.danger:hover {
+.action-icon.danger:hover {
   background: rgba(231, 76, 60, 0.1);
   border-color: #e74c3c;
 }
 
+.users-list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.user-item {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(0, 238, 255, 0.1);
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.user-item:hover {
+  background: rgba(0, 238, 255, 0.1);
+  border-color: rgba(0, 238, 255, 0.3);
+}
+
+.user-item.selected {
+  background: rgba(0, 238, 255, 0.2);
+  border-color: rgba(0, 238, 255, 0.4);
+}
+
 .user-checkbox {
-  margin-right: 8px;
+  margin-right: 12px;
+}
+
+.user-department {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.5);
 }
 
 .batch-actions {
@@ -747,7 +1007,7 @@ watch(() => props.visible, (newVisible) => {
 
 .btn {
   padding: 12px 20px;
-  border-radius: 6px;
+  border-radius: 8px;
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
@@ -770,15 +1030,16 @@ watch(() => props.visible, (newVisible) => {
 }
 
 .btn-primary {
-  background: linear-gradient(45deg, #00eeff, #00b4db);
-  color: #0f2027;
-  border: none;
+  background: linear-gradient(135deg, #00eeff, #0099cc);
+  color: #fff;
+  border: 1px solid #00eeff;
 }
 
 .btn-primary:hover {
-  background: linear-gradient(45deg, #00b4db, #00eeff);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 238, 255, 0.3);
+  background: linear-gradient(135deg, #33f0ff, #00b3e6);
+  border-color: #33f0ff;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(0, 238, 255, 0.4);
 }
 
 /* 响应式设计 */
@@ -794,21 +1055,18 @@ watch(() => props.visible, (newVisible) => {
     gap: 12px;
   }
 
-  .member-item,
-  .user-item {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
-  }
-
-  .member-actions {
-    width: 100%;
-    justify-content: flex-end;
-  }
-
   .batch-actions {
     flex-direction: column;
     gap: 12px;
+  }
+
+  .data-table {
+    font-size: 12px;
+  }
+
+  .data-table th,
+  .data-table td {
+    padding: 8px 12px;
   }
 }
 </style> 

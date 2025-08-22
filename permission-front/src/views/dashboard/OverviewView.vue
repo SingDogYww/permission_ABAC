@@ -374,7 +374,7 @@ const formatTime = (date: Date) => {
 // 初始化图表（模拟）
 const initCharts = () => {
   // 这里应该使用真实的图表库如 ECharts 或 Chart.js
-  console.log('初始化图表...')
+  // 初始化图表
 }
 
 onMounted(() => {

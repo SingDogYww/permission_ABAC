@@ -301,7 +301,6 @@ const sendCode = () => {
 }
 
 const handleLogin = () => {
-  console.log('用户名登录:', usernameForm)
   // TODO: 实现登录逻辑
   // 暂时设置一个token以通过路由守卫
   localStorage.setItem('token', 'temp-token-for-demo')
@@ -310,7 +309,6 @@ const handleLogin = () => {
 }
 
 const handlePhoneLogin = () => {
-  console.log('手机登录:', phoneForm)
   // TODO: 实现手机登录逻辑
   // 暂时设置一个token以通过路由守卫
   localStorage.setItem('token', 'temp-token-for-demo')
@@ -319,7 +317,6 @@ const handlePhoneLogin = () => {
 }
 
 const handleEmailLogin = () => {
-  console.log('邮箱登录:', emailForm)
   // TODO: 实现邮箱登录逻辑
   // 暂时设置一个token以通过路由守卫
   localStorage.setItem('token', 'temp-token-for-demo')

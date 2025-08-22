@@ -10,6 +10,14 @@ export { userApi, mockUserApi }
 import { groupApi, mockGroupApi } from './group'
 export { groupApi, mockGroupApi }
 
+// 资源管理API
+import { resourceApi } from './resource'
+export { resourceApi }
+
+// 策略管理API
+import { policyApi } from './policy'
+export { policyApi }
+
 // 根据环境变量决定使用真实API还是模拟API
 const useMockApi = 'true'
 
@@ -26,6 +34,12 @@ export const api = {
 
   // 用户组管理API
   group: shouldUseMockApi ? mockGroupApi : groupApi,
+
+  // 资源管理API
+  resource: resourceApi,
+
+  // 策略管理API
+  policy: policyApi,
 }
 
 // 默认导出

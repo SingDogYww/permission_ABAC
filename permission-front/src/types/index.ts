@@ -57,39 +57,113 @@ export interface UserGroupMember {
   joinTime: string
   expireTime?: string
   createTime: string
+  user?: User // 关联的用户信息
 }
 
-// 权限策略类型定义
-export interface PermissionPolicy {
+// 用户组成员类型定义（别名，用于向后兼容）
+export type GroupMember = UserGroupMember
+
+// 用户组成员请求参数
+export interface GroupMemberRequest {
+  userId: string
+  memberType: 'MEMBER' | 'ADMIN' | 'OWNER'
+  expireTime?: string
+}
+
+// ABAC策略相关类型定义
+
+// 策略目标定义
+export interface PolicyTarget {
+  subjects: Array<{ type: string; value: string }>
+  resources: Array<{ type: string; value: string }>
+  actions: Array<{ type: string; value: string }>
+}
+
+// 条件定义
+export interface ConditionItem {
+  attribute: string
+  operator: 'equals' | 'not-equals' | 'in' | 'not-in' | 'greater-than' | 'less-than' | 'between' | 'contains' | 'starts-with' | 'ends-with'
+  value: any
+}
+
+export interface SubjectCondition extends ConditionItem {}
+export interface ResourceCondition extends ConditionItem {}
+export interface ActionCondition extends ConditionItem {}
+export interface EnvironmentCondition extends ConditionItem {}
+
+// 策略规则定义
+export interface PolicyRule {
+  id: string
+  effect: 'permit' | 'deny'
+  conditions: {
+    subject?: SubjectCondition[]
+    resource?: ResourceCondition[]
+    action?: ActionCondition[]
+    environment?: EnvironmentCondition[]
+  }
+}
+
+// 策略定义
+export interface Policy {
   id: string
   name: string
   description?: string
-  subjectAttributes?: Record<string, any>
-  objectAttributes?: Record<string, any>
-  actionAttributes?: Record<string, any>
-  environmentAttributes?: Record<string, any>
-  effect: 'PERMIT' | 'DENY'
+  version: string
+  status: 'active' | 'inactive' | 'draft'
+  target: PolicyTarget
+  rules: PolicyRule[]
   priority: number
-  status: 'active' | 'inactive'
-  createTime: string
-  updateTime: string
-  deleted: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+// 策略搜索参数
+export interface PolicySearchParams extends SearchParams {
+  version?: string
+  priority?: number
+}
+
+// 权限评估请求
+export interface PermissionEvaluationRequest {
+  subject: {
+    id: string
+    attributes: Record<string, any>
+  }
+  resource: {
+    id: string
+    attributes: Record<string, any>
+  }
+  action: string
+  environment: Record<string, any>
+}
+
+// 权限评估结果
+export interface PermissionEvaluationResult {
+  decision: 'permit' | 'deny' | 'indeterminate'
+  reasons: string[]
+  matchedPolicies: string[]
+  evaluationTime: string
+  obligations?: any[]
+  advice?: any[]
 }
 
 // 资源类型定义
 export interface Resource {
   id: string
   name: string
-  code: string
-  type: 'menu' | 'component' | 'api' | 'data'
-  parentId?: string
+  type: 'module' | 'document' | 'api' | 'data' | 'file'
   path?: string
-  method?: string
   description?: string
-  status: 'active' | 'inactive'
-  createTime: string
-  updateTime: string
-  deleted: boolean
+  attributes: Record<string, any>
+  actions: string[]
+  createdAt: string
+  updatedAt: string
+}
+
+// 资源搜索参数
+export interface ResourceSearchParams extends SearchParams {
+  type?: string
+  path?: string
 }
 
 // 搜索和分页参数类型

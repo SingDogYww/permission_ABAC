@@ -1,25 +1,25 @@
 <template>
   <BaseModal
     :visible="visible"
-    :title="title"
+    :title="effectiveTitle"
     :icon="getIcon()"
     size="small"
-    :cancel-text="cancelText"
-    :confirm-text="confirmText"
-    :confirm-icon="confirmIcon"
+    :cancel-text="effectiveCancelText"
+    :confirm-text="effectiveConfirmText"
+    :confirm-icon="effectiveConfirmIcon"
     @close="close"
     @cancel="handleCancel"
     @confirm="handleConfirm"
   >
     <div class="confirm-content">
-      <div class="confirm-icon" :class="type">
+      <div class="confirm-icon" :class="effectiveType">
         <font-awesome-icon :icon="getIcon()" />
       </div>
       
       <div class="confirm-message-section">
-        <p class="confirm-message">{{ message }}</p>
-        <div v-if="details" class="confirm-details">
-          <p v-for="detail in details" :key="detail" class="detail-item">
+        <p class="confirm-message">{{ effectiveMessage }}</p>
+        <div v-if="effectiveDetails" class="confirm-details">
+          <p v-for="detail in effectiveDetails" :key="detail" class="detail-item">
             {{ detail }}
           </p>
         </div>
@@ -32,6 +32,19 @@
 import { computed } from 'vue'
 import BaseModal from './BaseModal.vue'
 
+interface ConfirmConfig {
+  title?: string
+  content?: string
+  message?: string
+  details?: string[]
+  type?: 'warning' | 'danger' | 'info' | 'success'
+  confirmText?: string
+  cancelText?: string
+  confirmIcon?: string
+  loading?: boolean
+  onConfirm?: () => void
+}
+
 interface Props {
   visible: boolean
   title?: string
@@ -41,6 +54,7 @@ interface Props {
   confirmText?: string
   cancelText?: string
   confirmIcon?: string
+  config?: ConfirmConfig
 }
 
 interface Emits {
@@ -57,6 +71,15 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<Emits>()
 
+// 合并config和直接props
+const effectiveTitle = computed(() => props.config?.title || props.title)
+const effectiveMessage = computed(() => props.config?.content || props.config?.message || props.message)
+const effectiveDetails = computed(() => props.config?.details || props.details)
+const effectiveType = computed(() => props.config?.type || props.type)
+const effectiveConfirmText = computed(() => props.config?.confirmText || props.confirmText)
+const effectiveCancelText = computed(() => props.config?.cancelText || props.cancelText)
+const effectiveConfirmIcon = computed(() => props.config?.confirmIcon || props.confirmIcon)
+
 const getIcon = () => {
   const icons = {
     warning: 'exclamation-triangle',
@@ -64,7 +87,7 @@ const getIcon = () => {
     info: 'info-circle',
     success: 'check-circle'
   }
-  return icons[props.type]
+  return icons[effectiveType.value]
 }
 
 const close = () => {
@@ -72,8 +95,12 @@ const close = () => {
 }
 
 const handleConfirm = () => {
-  emit('confirm')
-  close()
+  if (props.config?.onConfirm) {
+    props.config.onConfirm()
+  } else {
+    emit('confirm')
+    close()
+  }
 }
 
 const handleCancel = () => {

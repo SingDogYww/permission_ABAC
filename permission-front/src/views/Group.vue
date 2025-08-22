@@ -38,9 +38,9 @@
 
     <!-- 错误提示 -->
     <div v-if="error" class="error-container">
-      <font-awesome-icon icon="exclamation-triangle" />
-      {{ error }}
-      <button @click="loadGroups" class="retry-btn">重试</button>
+        <font-awesome-icon icon="exclamation-triangle" />
+        {{ error }}
+        <button @click="loadGroups" class="retry-btn">重试</button>
     </div>
 
     <!-- 列表视图 -->
@@ -285,144 +285,199 @@
 
     <!-- 树形结构与成员视图 -->
     <div v-if="!loading && !error && currentView === 'tree-members'" class="tree-view">
-      <div class="tree-toolbar">
-        <button class="action-btn primary" @click="showCreateModal" :disabled="loading">
-          <font-awesome-icon icon="plus" />
-          创建用户组
-        </button>
-        <button class="action-btn" @click="refreshTree" :disabled="treeLoading">
-          <font-awesome-icon icon="sync" :spin="treeLoading" />
-          刷新
-        </button>
-        <button class="action-btn" @click="expandAll">
-          <font-awesome-icon icon="expand-arrows-alt" />
-          展开全部
-        </button>
-        <button class="action-btn" @click="collapseAll">
-          <font-awesome-icon icon="compress-arrows-alt" />
-          收起全部
-        </button>
-      </div>
-
       <div class="tree-content">
         <div class="group-tree-panel">
-          <h3>
-            <font-awesome-icon icon="sitemap" />
-            组织结构
-          </h3>
+          <div class="tree-header">
+            <h3>
+              <font-awesome-icon icon="sitemap" />
+              组织结构
+            </h3>
+            <div class="tree-toolbar">
+              <button 
+                :class="['action-btn', 'primary', 'compact', { 'icon-only': !showButtonText }]"
+                @click="showCreateModal" 
+                :disabled="loading"
+                :title="'创建用户组'"
+              >
+                <font-awesome-icon icon="plus" />
+                <span v-if="showButtonText" class="btn-text">创建用户组</span>
+              </button>
+              <button 
+                :class="['action-btn', 'compact', { 'icon-only': !showButtonText }]"
+                @click="refreshTree" 
+                :disabled="treeLoading"
+                :title="'刷新'"
+              >
+                <font-awesome-icon icon="sync" :spin="treeLoading" />
+                <span v-if="showButtonText" class="btn-text">刷新</span>
+              </button>
+              <button 
+                :class="['action-btn', 'compact', { 'icon-only': !showButtonText }]"
+                @click="expandAll"
+                :title="'展开全部'"
+              >
+                <font-awesome-icon icon="expand-arrows-alt" />
+                <span v-if="showButtonText" class="btn-text">展开全部</span>
+              </button>
+              <button 
+                :class="['action-btn', 'compact', { 'icon-only': !showButtonText }]"
+                @click="collapseAll"
+                :title="'收起全部'"
+              >
+                <font-awesome-icon icon="compress-arrows-alt" />
+                <span v-if="showButtonText" class="btn-text">收起全部</span>
+              </button>
+            </div>
+          </div>
           <div v-if="treeLoading" class="tree-loading">
             <font-awesome-icon icon="spinner" spin />
             加载中...
           </div>
-                     <div v-else class="tree-container">
-             <TreeNode
-               v-for="rootGroup in groupTree"
-               :key="rootGroup.id"
-               :group="rootGroup"
-               :expanded="expandedNodes.has(rootGroup.id)"
-               :selected="selectedGroupId === rootGroup.id"
-               :all-groups="groupTree"
-               :selected-group-id="selectedGroupId"
-               @toggle="toggleNode"
-               @select="selectGroup"
-               @edit="editGroup"
-               @delete="deleteGroup"
-               @create-child="addChildGroup"
-               @manage-members="viewGroupMembers"
-             />
-           </div>
+          <div v-else-if="groupTree.length === 0" class="empty-state">
+            <font-awesome-icon icon="sitemap" class="empty-icon" />
+            <h3>暂无组织架构数据</h3>
+            <p>还没有创建任何用户组，点击上方按钮创建第一个用户组</p>
+            <button class="action-btn primary" @click="showCreateModal">
+              <font-awesome-icon icon="plus" />
+              创建第一个用户组
+            </button>
+          </div>
+          <div v-else class="tree-container">
+            <TreeNode
+              v-for="rootGroup in rootGroups"
+              :key="rootGroup.id"
+              :group="rootGroup"
+              :expanded="expandedNodes.has(rootGroup.id)"
+              :selected="selectedGroupId === rootGroup.id"
+              :all-groups="flatGroupTree"
+              :selected-group-id="selectedGroupId"
+              @toggle="toggleNode"
+              @select="selectGroup"
+              @edit="editGroup"
+              @delete="deleteGroup"
+              @create-child="addChildGroup"
+              @manage-members="viewGroupMembers"
+            />
+          </div>
         </div>
 
         <div class="group-members-panel">
-          <div v-if="selectedGroup" class="members-content">
+          <div v-if="selectedGroup">
             <div class="members-header">
               <h3>
                 <font-awesome-icon :icon="getGroupIcon(selectedGroup.type)" />
                 {{ selectedGroup.name }} - 成员管理
               </h3>
-              <button class="action-btn primary" @click="addGroupMember" :disabled="membersLoading">
-                <font-awesome-icon icon="user-plus" />
-                添加成员
-              </button>
-            </div>
-
-            <div v-if="membersLoading" class="members-loading">
-              <font-awesome-icon icon="spinner" spin />
-              加载成员数据...
-            </div>
-
-            <div v-else class="members-list">
-              <div v-if="groupMembers.length === 0" class="no-members">
-                <font-awesome-icon icon="users" />
-                <p>该用户组暂无成员</p>
-                <button class="action-btn primary" @click="addGroupMember">
+              <div class="members-toolbar">
+                <button 
+                  :class="['action-btn', 'primary', 'compact', { 'icon-only': !showButtonText }]"
+                  @click="addGroupMember" 
+                  :disabled="membersLoading"
+                  :title="'添加成员'"
+                >
                   <font-awesome-icon icon="user-plus" />
-                  添加第一个成员
+                  <span v-if="showButtonText" class="btn-text">添加成员</span>
+                </button>
+                <button 
+                  :class="['action-btn', 'compact', { 'icon-only': !showButtonText }]"
+                  @click="refreshMembers" 
+                  :disabled="membersLoading"
+                  :title="'刷新成员列表'"
+                >
+                  <font-awesome-icon icon="sync" :spin="membersLoading" />
+                  <span v-if="showButtonText" class="btn-text">刷新</span>
+                </button>
+                <button 
+                  :class="['action-btn', 'compact', { 'icon-only': !showButtonText }]"
+                  @click="exportMembers" 
+                  :disabled="membersLoading"
+                  :title="'导出成员列表'"
+                >
+                  <font-awesome-icon icon="download" />
+                  <span v-if="showButtonText" class="btn-text">导出</span>
                 </button>
               </div>
+            </div>
+            
+            <div class="members-content">
+              <div v-if="membersLoading" class="members-loading">
+                <font-awesome-icon icon="spinner" spin />
+                加载成员数据...
+              </div>
 
-              <div v-else class="members-table">
-                <table class="data-table">
-                  <thead>
-                    <tr>
-                      <th>用户信息</th>
-                      <th>成员类型</th>
-                      <th>加入时间</th>
-                      <th>过期时间</th>
-                      <th>操作</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr v-for="member in groupMembers" :key="member.id">
-                      <td>
-                        <div class="member-info">
-                          <img 
-                            :src="getUserAvatar(member.user)" 
-                            :alt="member.user.nickname || member.user.username" 
-                            class="member-avatar"
-                            @error="handleAvatarError"
-                          />
-                          <div class="member-details">
-                            <div class="member-name">{{ member.user.nickname || member.user.username }}</div>
-                            <div class="member-email">{{ member.user.email }}</div>
+              <div v-else class="members-list">
+                <div v-if="groupMembers.length === 0" class="no-members">
+                  <font-awesome-icon icon="users" />
+                  <p>该用户组暂无成员</p>
+                  <button class="action-btn primary" @click="addGroupMember">
+                    <font-awesome-icon icon="user-plus" />
+                    添加第一个成员
+                  </button>
+                </div>
+
+                <div v-else class="members-table">
+                  <table class="data-table">
+                    <thead>
+                      <tr>
+                        <th>用户信息</th>
+                        <th>成员类型</th>
+                        <th>加入时间</th>
+                        <th>过期时间</th>
+                        <th>操作</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr v-for="member in groupMembers" :key="member.id">
+                        <td>
+                          <div class="member-info">
+                            <img 
+                              :src="getUserAvatar(member.user)" 
+                              :alt="member.user?.nickname || member.user?.username || '未知用户'" 
+                              class="member-avatar"
+                              @error="handleAvatarError"
+                            />
+                            <div class="member-details">
+                              <div class="member-name">{{ member.user?.nickname || member.user?.username || '未知用户' }}</div>
+                              <div class="member-email">{{ member.user?.email || '无邮箱' }}</div>
+                            </div>
                           </div>
-                        </div>
-                      </td>
-                      <td>
-                        <span :class="['member-type-badge', member.memberType.toLowerCase()]">
-                          {{ getMemberTypeLabel(member.memberType) }}
-                        </span>
-                      </td>
-                      <td>
-                        <span class="join-time">{{ formatDateTime(member.joinTime) }}</span>
-                      </td>
-                      <td>
-                        <span v-if="member.expireTime" class="expire-time">
-                          {{ formatDateTime(member.expireTime) }}
-                        </span>
-                        <span v-else class="no-expire">永不过期</span>
-                      </td>
-                      <td>
-                        <div class="member-actions">
-                          <button 
-                            class="action-icon edit" 
-                            @click="editGroupMember(member)"
-                            title="编辑成员"
-                          >
-                            <font-awesome-icon icon="edit" />
-                          </button>
-                          <button 
-                            class="action-icon delete" 
-                            @click="removeGroupMember(member)"
-                            title="移除成员"
-                          >
-                            <font-awesome-icon icon="user-minus" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
+                        </td>
+                        <td>
+                          <span :class="['member-type-badge', member.memberType.toLowerCase()]">
+                            {{ getMemberTypeLabel(member.memberType) }}
+                          </span>
+                        </td>
+                        <td>
+                          <span class="join-time">{{ formatDateTime(member.joinTime) }}</span>
+                        </td>
+                        <td>
+                          <span v-if="member.expireTime" class="expire-time">
+                            {{ formatDateTime(member.expireTime) }}
+                          </span>
+                          <span v-else class="no-expire">永不过期</span>
+                        </td>
+                        <td>
+                          <div class="member-actions">
+                            <button 
+                              class="action-icon edit" 
+                              @click="editGroupMember(member)"
+                              title="编辑成员"
+                            >
+                              <font-awesome-icon icon="edit" />
+                            </button>
+                            <button 
+                              class="action-icon delete" 
+                              @click="removeGroupMember(member)"
+                              title="移除成员"
+                            >
+                              <font-awesome-icon icon="user-minus" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           </div>
@@ -476,7 +531,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, reactive } from 'vue'
+import { ref, computed, onMounted, onUnmounted, reactive, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import GroupFormModal from '@/components/Group/GroupFormModal.vue'
 import MemberModal from '@/components/Group/MemberModal.vue'
@@ -545,7 +600,16 @@ const groupMembers = ref<GroupMember[]>([])
 const parentGroupOptions = ref<UserGroup[]>([])
 const selectedGroups = ref<string[]>([])
 const currentPageInput = ref(1)
-const confirmConfig = ref<any>({})
+const confirmConfig = ref({
+  title: '',
+  message: '',
+  details: [] as string[],
+  type: 'warning' as 'warning' | 'danger' | 'info' | 'success',
+  confirmText: '',
+  confirmIcon: '',
+  loading: false,
+  onConfirm: () => {}
+})
 
 // 默认头像
 const defaultAvatar = `data:image/svg+xml;charset=UTF-8,%3csvg width='48' height='48' viewBox='0 0 48 48' fill='none' xmlns='http://www.w3.org/2000/svg'%3e%3ccircle cx='24' cy='24' r='24' fill='url(%23gradient0_linear_1_1)'/%3e%3ccircle cx='24' cy='19' r='7' fill='white' fill-opacity='0.9'/%3e%3cpath d='M12 38C12 31.3726 17.3726 26 24 26C30.6274 26 36 31.3726 36 38V38H12Z' fill='white' fill-opacity='0.9'/%3e%3cdefs%3e%3clinearGradient id='gradient0_linear_1_1' x1='0' y1='0' x2='48' y2='48' gradientUnits='userSpaceOnUse'%3e%3cstop stop-color='%2300EEFF'/%3e%3cstop offset='0.5' stop-color='%2300AACC'/%3e%3cstop offset='1' stop-color='%23007799'/%3e%3c/linearGradient%3e%3c/defs%3e%3c/svg%3e`
@@ -561,10 +625,80 @@ const isCurrentPagePartialSelected = computed(() => {
   return selectedGroups.value.length > 0 && selectedGroups.value.length < groupList.value.length
 })
 
+// 将树形数据展平，供TreeNode组件使用
+const flatGroupTree = computed(() => {
+  const flattenTree = (nodes: UserGroup[]): UserGroup[] => {
+    const result: UserGroup[] = []
+    
+    const traverse = (node: UserGroup) => {
+      // 添加当前节点到结果中
+      result.push({
+        ...node,
+        children: undefined // TreeNode组件通过parentId来构建层级关系
+      })
+      
+      // 递归处理子节点
+      if (node.children && node.children.length > 0) {
+        node.children.forEach(child => traverse(child))
+      }
+    }
+    
+    nodes.forEach(node => traverse(node))
+    return result
+  }
+  
+  return flattenTree(groupTree.value)
+})
+
+// 获取根节点（用于展示顶级节点）
+const rootGroups = computed(() => {
+  return flatGroupTree.value.filter(group => 
+    !group.parentId || 
+    group.parentId === '0' || 
+    group.parentId === undefined
+  )
+})
+
+// 监听视图切换
+watch(currentView, (newView) => {
+  if (newView === 'tree-members' && groupTree.value.length === 0) {
+    loadGroupTree()
+  }
+})
+
+// 响应式按钮显示控制
+const showButtonText = ref(true)
+
+// 检测容器宽度并调整按钮显示
+const checkContainerWidth = () => {
+  const treeHeader = document.querySelector('.tree-header')
+  if (treeHeader) {
+    const containerWidth = treeHeader.clientWidth
+    showButtonText.value = containerWidth > 600
+  }
+}
+
+// 窗口尺寸变化时重新检测
+const handleResize = () => {
+  checkContainerWidth()
+}
+
+onMounted(() => {
+  nextTick(() => {
+    checkContainerWidth()
+  })
+  window.addEventListener('resize', handleResize)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', handleResize)
+})
+
 // 生命周期
 onMounted(() => {
   loadGroups()
   loadParentGroupOptions()
+  loadGroupTree()
 })
 
 // 方法
@@ -574,6 +708,7 @@ const loadGroups = async () => {
     error.value = ''
     
     const response = await api.group.getGroups(searchForm)
+    
     groupList.value = response.data.list
     pagination.total = response.data.total
     pagination.current = response.data.current
@@ -689,7 +824,8 @@ const formatDateTime = (dateStr?: string) => {
   return new Date(dateStr).toLocaleString('zh-CN')
 }
 
-const getUserAvatar = (user: User) => {
+const getUserAvatar = (user?: User) => {
+  if (!user) return defaultAvatar
   return user.avatar || defaultAvatar
 }
 
@@ -705,7 +841,7 @@ const showCreateModal = () => {
 }
 
 const viewGroupDetail = (group: UserGroup) => {
-  router.push(`/groups/${group.id}`)
+  router.push(`/permission/groups/${group.id}`)
 }
 
 const editGroup = (group: UserGroup) => {
@@ -722,7 +858,6 @@ const toggleGroupStatus = async (group: UserGroup) => {
     
     // 更新本地状态
     group.status = newStatus
-    console.log(`用户组 ${group.name} 状态已更新为 ${newStatus}`)
   } catch (err) {
     error.value = err instanceof Error ? err.message : '更新用户组状态失败'
     console.error('更新用户组状态失败:', err)
@@ -744,10 +879,10 @@ const deleteGroup = (group: UserGroup) => {
     type: 'danger',
     confirmText: '删除',
     confirmIcon: 'trash',
+    loading: false,
     onConfirm: async () => {
       try {
         await api.group.deleteGroup(group.id)
-        console.log('用户组已删除:', group.name)
         // 重新加载数据
         loadGroups()
         if (currentView.value === 'tree-members') {
@@ -773,10 +908,10 @@ const batchDeleteGroups = () => {
     type: 'danger',
     confirmText: '批量删除',
     confirmIcon: 'trash',
+    loading: false,
     onConfirm: async () => {
       try {
         await api.group.batchDeleteGroups(selectedGroups.value)
-        console.log(`成功删除 ${selectedGroups.value.length} 个用户组`)
         selectedGroups.value = []
         // 重新加载数据
         loadGroups()
@@ -792,7 +927,6 @@ const batchDeleteGroups = () => {
 const exportGroups = async () => {
   try {
     await api.group.exportGroups(searchForm)
-    console.log('用户组数据导出成功')
   } catch (err) {
     error.value = err instanceof Error ? err.message : '导出用户组数据失败'
     console.error('导出用户组数据失败:', err)
@@ -808,11 +942,9 @@ const handleGroupSubmit = async (groupData: GroupCreateRequest | GroupUpdateRequ
       // 编辑用户组
       const updateData = { ...groupData, id: currentGroup.value.id } as GroupUpdateRequest
       await api.group.updateGroup(updateData)
-      console.log('用户组已更新:', groupData)
     } else {
       // 添加用户组
       await api.group.createGroup(groupData as GroupCreateRequest)
-      console.log('用户组已添加:', groupData)
     }
     
     // 关闭模态框
@@ -839,7 +971,6 @@ const handleGroupImport = async (importedGroups: GroupCreateRequest[]) => {
     const promises = importedGroups.map(groupData => api.group.createGroup(groupData))
     await Promise.all(promises)
     
-    console.log(`成功导入 ${importedGroups.length} 个用户组`)
     showImportModal.value = false
     
     // 重新加载数据
@@ -888,7 +1019,30 @@ const toggleNode = (groupId: string) => {
   }
 }
 
-const selectGroup = (group: UserGroup) => {
+const selectGroup = (groupOrId: UserGroup | string) => {
+  let group: UserGroup | undefined
+  
+  // 如果传入的是字符串（ID），需要从用户组列表中找到对应的组对象
+  if (typeof groupOrId === 'string') {
+    const groupId = groupOrId
+    
+    // 先在平铺的树形数据中查找
+    group = flatGroupTree.value.find(g => g.id === groupId)
+    
+    // 如果没找到，在列表数据中查找
+    if (!group) {
+      group = groupList.value.find(g => g.id === groupId)
+    }
+  } else {
+    // 如果传入的是对象，直接使用
+    group = groupOrId
+  }
+  
+  if (!group || !group.id) {
+    console.error(`用户组数据无效:`, group)
+    return
+  }
+  
   selectedGroupId.value = group.id
   selectedGroup.value = group
   loadGroupMembers(group.id)
@@ -917,6 +1071,49 @@ const addGroupMember = () => {
   showMemberModal.value = true
 }
 
+const refreshMembers = () => {
+  if (selectedGroup.value) {
+    loadGroupMembers(selectedGroup.value.id)
+  }
+}
+
+const exportMembers = () => {
+  if (!selectedGroup.value || groupMembers.value.length === 0) {
+    console.warn('没有可导出的成员数据')
+    return
+  }
+
+  try {
+    const csvData = [
+      ['用户名', '昵称', '邮箱', '成员类型', '加入时间', '过期时间'],
+      ...groupMembers.value.map(member => [
+        member.user.username,
+        member.user.nickname || '',
+        member.user.email || '',
+        getMemberTypeLabel(member.memberType),
+        member.joinTime,
+        member.expireTime || '永不过期'
+      ])
+    ]
+    
+    const csvContent = csvData.map(row => 
+      row.map(field => `"${field}"`).join(',')
+    ).join('\n')
+    
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const link = document.createElement('a')
+    const url = URL.createObjectURL(blob)
+    link.setAttribute('href', url)
+    link.setAttribute('download', `${selectedGroup.value.name}_成员列表.csv`)
+    link.style.visibility = 'hidden'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  } catch (error) {
+    console.error('导出成员列表失败:', error)
+  }
+}
+
 const editGroupMember = (member: GroupMember) => {
   currentMember.value = member
   showMemberModal.value = true
@@ -934,10 +1131,10 @@ const removeGroupMember = (member: GroupMember) => {
     type: 'warning',
     confirmText: '移除',
     confirmIcon: 'user-minus',
+    loading: false,
     onConfirm: async () => {
       try {
         await api.group.removeGroupMember(selectedGroup.value!.id, member.user.id)
-        console.log('组成员已移除:', member.user.username)
         // 重新加载成员数据
         loadGroupMembers(selectedGroup.value!.id)
         // 更新组信息中的成员数量
@@ -960,11 +1157,9 @@ const handleMemberSubmit = async (memberData: GroupMemberRequest) => {
     if (currentMember.value) {
       // 编辑成员
       await api.group.updateGroupMember(selectedGroup.value!.id, currentMember.value.user.id, memberData)
-      console.log('组成员已更新:', memberData)
     } else {
       // 添加成员
       await api.group.addGroupMember(selectedGroup.value!.id, memberData)
-      console.log('组成员已添加:', memberData)
       // 更新组信息中的成员数量
       if (selectedGroup.value) {
         selectedGroup.value.memberCount = (selectedGroup.value.memberCount || 0) + 1
@@ -1305,6 +1500,93 @@ const handleViewChange = () => {
 .action-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* 紧凑模式按钮样式 */
+.action-btn.compact {
+  min-width: 44px; /* 确保图标按钮有最小宽度 */
+  padding: 10px 16px;
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+.action-btn.compact .btn-text {
+  display: inline;
+  margin-left: 6px;
+  white-space: nowrap;
+  transition: opacity 0.3s ease;
+}
+
+/* 仅图标模式时的样式调整 */
+.action-btn.compact.icon-only {
+  padding: 10px;
+  min-width: 40px;
+  justify-content: center;
+}
+
+/* 成员工具栏响应式 */
+@container (max-width: 600px) {
+  .members-toolbar .btn-text {
+    display: none;
+  }
+  
+  .members-toolbar .action-btn.compact {
+    padding: 10px;
+    min-width: 40px;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 1200px) {
+  .members-toolbar .btn-text {
+    display: none;
+  }
+  
+  .members-toolbar .action-btn.compact {
+    padding: 10px;
+    min-width: 40px;
+    justify-content: center;
+  }
+}
+
+/* 响应式设计：在较小屏幕或容器中隐藏文字，只显示图标 */
+@media (max-width: 1400px) {
+  .tree-toolbar .action-btn.compact .btn-text {
+    display: none;
+  }
+  
+  .tree-toolbar .action-btn.compact {
+    padding: 10px;
+    min-width: 40px;
+  }
+}
+
+/* 容器查询：根据实际容器宽度调整按钮显示 */
+@container (max-width: 700px) {
+  .tree-toolbar .action-btn.compact .btn-text {
+    display: none;
+  }
+  
+  .tree-toolbar .action-btn.compact {
+    padding: 10px;
+    min-width: 40px;
+  }
+}
+
+/* 备用方案：基于视口宽度的媒体查询 */
+@media (max-width: 1200px) {
+  .tree-toolbar .action-btn.compact .btn-text {
+    display: none;
+  }
+  
+  .tree-toolbar .action-btn.compact {
+    padding: 10px;
+    min-width: 40px;
+  }
+  
+  .tree-toolbar {
+    gap: 6px;
+  }
 }
 
 /* 表格样式复用用户列表的样式 */
@@ -1670,6 +1952,43 @@ const handleViewChange = () => {
   border: 1px solid rgba(0, 238, 255, 0.2);
   border-radius: 12px;
   overflow: hidden;
+  min-height: 500px;
+  max-height: 500px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 树形结构头部 */
+.tree-header {
+  background: rgba(0, 238, 255, 0.1);
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(0, 238, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-width: 0; /* 允许flex容器收缩 */
+  container-type: inline-size; /* 启用容器查询 */
+}
+
+.tree-header h3 {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #00eeff;
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+  flex-shrink: 0;
+}
+
+.tree-header .tree-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  flex-shrink: 0;
+  min-width: 0;
 }
 
 .panel-header {
@@ -1702,9 +2021,8 @@ const handleViewChange = () => {
 
 .tree-container {
   padding: 20px;
-  min-height: 500px;
-  max-height: 500px;
   overflow-y: auto;
+  flex: 1;
 }
 
 /* 右侧成员面板 */
@@ -1714,15 +2032,22 @@ const handleViewChange = () => {
   border: 1px solid rgba(0, 238, 255, 0.2);
   border-radius: 12px;
   overflow: hidden;
+  min-height: 500px;
+  max-height: 500px;
+  display: flex;
+  flex-direction: column;
 }
 
 .members-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  background: rgba(0, 238, 255, 0.1);
   padding: 16px 20px;
   border-bottom: 1px solid rgba(0, 238, 255, 0.2);
-  background: rgba(0, 238, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-width: 0; /* 允许flex容器收缩 */
+  container-type: inline-size; /* 启用容器查询 */
 }
 
 .members-header h3 {
@@ -1733,10 +2058,22 @@ const handleViewChange = () => {
   font-size: 18px;
   font-weight: 600;
   margin: 0;
+  flex-shrink: 0;
+}
+
+.members-header .members-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  flex-shrink: 0;
+  min-width: 0;
 }
 
 .members-content {
   padding: 20px;
+  overflow-y: auto;
+  flex: 1;
 }
 
 .members-loading {

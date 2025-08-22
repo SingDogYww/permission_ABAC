@@ -505,7 +505,6 @@ const sendPhoneCode = () => {
   }, 1000)
   
   // TODO: 发送短信验证码
-  console.log('发送手机验证码到:', verifyForm.phone)
 }
 
 const sendEmailCode = () => {
@@ -523,13 +522,11 @@ const sendEmailCode = () => {
   }, 1000)
   
   // TODO: 发送邮箱验证码
-  console.log('发送邮箱验证码到:', verifyForm.email)
 }
 
 const handlePhoneVerify = () => {
   if (canProceedStep2Phone.value) {
     // TODO: 验证手机验证码
-    console.log('手机验证:', verifyForm.phone, verifyForm.phoneCode)
     completeRegistration()
   }
 }
@@ -537,7 +534,6 @@ const handlePhoneVerify = () => {
 const handleEmailVerify = () => {
   if (canProceedStep2Email.value) {
     // TODO: 验证邮箱验证码
-    console.log('邮箱验证:', verifyForm.email, verifyForm.emailCode)
     completeRegistration()
   }
 }

@@ -34,7 +34,7 @@
         <button class="action-btn small" @click="$emit('edit', group)" title="编辑">
           <font-awesome-icon icon="edit" />
         </button>
-        <button class="action-btn small success" @click="$emit('manage-members', group.id)" title="成员管理">
+        <button class="action-btn small success" @click="$emit('manage-members', group)" title="成员管理">
           <font-awesome-icon icon="user-friends" />
         </button>
         <button class="action-btn small danger" @click="$emit('delete', group)" title="删除">
@@ -83,7 +83,7 @@ const emit = defineEmits<{
   'create-child': [group: any]
   edit: [group: any]
   delete: [group: any]
-  'manage-members': [groupId: string]
+  'manage-members': [group: any]
 }>()
 
 // 子节点展开状态

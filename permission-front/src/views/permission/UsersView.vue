@@ -158,6 +158,13 @@
             <td>
               <div class="action-buttons">
                 <button 
+                  class="action-icon view" 
+                  @click="viewUserDetail(user)"
+                  title="查看详情"
+                >
+                  <font-awesome-icon icon="eye" />
+                </button>
+                <button 
                   class="action-icon edit" 
                   @click="editUser(user)"
                   :disabled="operatingUsers.has(user.id)"
@@ -337,7 +344,16 @@ const tooltipGroups = ref<string[]>([])
 
 // 默认头像
 const defaultAvatar = `data:image/svg+xml;charset=UTF-8,%3csvg width='48' height='48' viewBox='0 0 48 48' fill='none' xmlns='http://www.w3.org/2000/svg'%3e%3ccircle cx='24' cy='24' r='24' fill='url(%23gradient0_linear_1_1)'/%3e%3ccircle cx='24' cy='19' r='7' fill='white' fill-opacity='0.9'/%3e%3cpath d='M12 38C12 31.3726 17.3726 26 24 26C30.6274 26 36 31.3726 36 38V38H12Z' fill='white' fill-opacity='0.9'/%3e%3cdefs%3e%3clinearGradient id='gradient0_linear_1_1' x1='0' y1='0' x2='48' y2='48' gradientUnits='userSpaceOnUse'%3e%3cstop stop-color='%2300EEFF'/%3e%3cstop offset='0.5' stop-color='%2300AACC'/%3e%3cstop offset='1' stop-color='%23007799'/%3e%3c/linearGradient%3e%3c/defs%3e%3c/svg%3e`
-const confirmConfig = ref<any>({})
+const confirmConfig = ref({
+  title: '',
+  message: '',
+  details: [] as string[],
+  type: 'warning' as 'warning' | 'danger' | 'info' | 'success',
+  confirmText: '',
+  confirmIcon: '',
+  loading: false,
+  onConfirm: () => {}
+})
 const selectedUsers = ref<string[]>([])
 const currentPageInput = ref(1)
 
@@ -433,7 +449,7 @@ const hideGroupTooltip = () => {
 }
 
 const viewUserDetail = (user: User) => {
-  router.push(`/users/${user.id}`)
+  router.push(`/permission/users/${user.id}`)
 }
 
 const editUser = (user: User) => {
@@ -450,7 +466,7 @@ const toggleUserStatus = async (user: User) => {
     
     // 更新本地状态
     user.status = newStatus
-    console.log(`用户 ${user.username} 状态已更新为 ${newStatus}`)
+
   } catch (err) {
     error.value = err instanceof Error ? err.message : '更新用户状态失败'
     console.error('更新用户状态失败:', err)
@@ -471,10 +487,11 @@ const deleteUser = (user: User) => {
     type: 'danger',
     confirmText: '删除',
     confirmIcon: 'trash',
+    loading: false,
     onConfirm: async () => {
       try {
         await api.user.deleteUser(user.id)
-        console.log('用户已删除:', user.username)
+
         // 重新加载当前页数据
         loadUsers()
       } catch (err) {
@@ -497,10 +514,11 @@ const batchDeleteUsers = () => {
     type: 'danger',
     confirmText: '批量删除',
     confirmIcon: 'trash',
+    loading: false,
     onConfirm: async () => {
       try {
         await api.user.batchDeleteUsers(selectedUsers.value)
-        console.log(`成功删除 ${selectedUsers.value.length} 个用户`)
+
         selectedUsers.value = []
         // 重新加载当前页数据
         loadUsers()
@@ -516,7 +534,7 @@ const batchDeleteUsers = () => {
 const exportUsers = async () => {
   try {
     await api.user.exportUsers(searchForm)
-    console.log('用户数据导出成功')
+
   } catch (err) {
     error.value = err instanceof Error ? err.message : '导出用户数据失败'
     console.error('导出用户数据失败:', err)
@@ -532,11 +550,9 @@ const handleUserSubmit = async (userData: UserCreateRequest | UserUpdateRequest)
       // 编辑用户
       const updateData = { ...userData, id: currentUser.value.id } as UserUpdateRequest
       await api.user.updateUser(updateData)
-      console.log('用户已更新:', userData)
     } else {
       // 添加用户
       await api.user.createUser(userData as UserCreateRequest)
-      console.log('用户已添加:', userData)
     }
     
     // 关闭模态框
@@ -559,7 +575,7 @@ const handleUserImport = async (importedUsers: UserCreateRequest[]) => {
     const promises = importedUsers.map(userData => api.user.createUser(userData))
     await Promise.all(promises)
     
-    console.log(`成功导入 ${importedUsers.length} 个用户`)
+
     showImportModal.value = false
     
     // 重新加载数据
@@ -1019,6 +1035,12 @@ const handleCloseUserModal = () => {
   background: rgba(0, 238, 255, 0.1);
   color: #00eeff;
   border-color: #00eeff;
+}
+
+.action-icon.view:hover {
+  background: rgba(82, 196, 26, 0.1);
+  color: #52c41a;
+  border-color: #52c41a;
 }
 
 .action-icon.edit:hover {

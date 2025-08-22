@@ -71,6 +71,16 @@ const router = createRouter({
           }
         },
         {
+          path: 'users/:id',
+          name: 'permission-user-detail',
+          component: () => import('../views/UserDetail.vue'),
+          meta: {
+            title: '用户详情',
+            requiresAuth: true
+          },
+          props: true
+        },
+        {
           path: 'groups',
           name: 'permission-groups',
           component: () => import('../views/Group.vue'),
@@ -78,6 +88,16 @@ const router = createRouter({
             title: '用户组管理',
             requiresAuth: true
           }
+        },
+        {
+          path: 'groups/:id',
+          name: 'permission-group-detail',
+          component: () => import('../views/GroupDetail.vue'),
+          meta: {
+            title: '用户组详情',
+            requiresAuth: true
+          },
+          props: true
         },
         // 权限控制
         {
