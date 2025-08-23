@@ -3,67 +3,99 @@
     <div class="page-header">
       <div class="page-title">
         <h1>
-          <font-awesome-icon icon="tachometer-alt" />
-          性能监控
+          <font-awesome-icon icon="chart-line" />
+          系统监控
         </h1>
-        <p>系统性能指标</p>
+        <p>实时性能监控面板</p>
       </div>
     </div>
 
     <div class="monitor-content">
-      <a-card>
+      <div class="content-card">
         <div class="placeholder-content">
-          <font-awesome-icon icon="tachometer-alt" size="3x" />
-          <h2>性能监控</h2>
-          <p>此页面将展示系统性能监控数据。</p>
+          <font-awesome-icon icon="chart-line" size="3x" />
+          <h2>系统监控</h2>
+          <p>此页面将展示系统性能指标、资源使用情况等实时监控信息。</p>
         </div>
-      </a-card>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-// 性能监控相关逻辑
+// 系统监控相关逻辑
 </script>
 
 <style scoped>
 .monitor-page {
-  padding: 24px;
-  background: #f5f5f5;
-  min-height: 100vh;
+  padding: 0;
+  min-height: calc(100vh - 70px);
 }
 
 .page-header {
-  margin-bottom: 24px;
-  background: white;
-  padding: 24px;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 32px;
 }
 
 .page-title h1 {
   margin: 0 0 8px 0;
-  font-size: 24px;
-  color: #262626;
+  font-size: 28px;
+  font-weight: 600;
+  color: #fff;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
+}
+
+.page-title svg {
+  color: #00eeff;
+  text-shadow: 0 0 8px rgba(0, 238, 255, 0.5);
 }
 
 .page-title p {
   margin: 0;
-  color: #8c8c8c;
-  font-size: 14px;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 16px;
+}
+
+.content-card {
+  background: rgba(15, 23, 42, 0.8);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(0, 238, 255, 0.2);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.content-card:hover {
+  border-color: rgba(0, 238, 255, 0.4);
+  box-shadow: 0 4px 20px rgba(0, 238, 255, 0.1);
 }
 
 .placeholder-content {
   text-align: center;
-  padding: 60px 20px;
-  color: #8c8c8c;
+  padding: 80px 40px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.placeholder-content svg {
+  color: #00eeff;
+  margin-bottom: 24px;
+  filter: drop-shadow(0 0 8px rgba(0, 238, 255, 0.3));
 }
 
 .placeholder-content h2 {
-  margin: 20px 0 10px 0;
-  color: #595959;
+  margin: 24px 0 16px 0;
+  color: #fff;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.placeholder-content p {
+  margin: 12px 0;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.7);
 }
 </style>

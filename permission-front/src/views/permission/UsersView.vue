@@ -275,6 +275,7 @@
       v-if="showAddUserModal || showEditUserModal"
       :visible="showAddUserModal || showEditUserModal"
       :user="currentUser"
+      :is-edit="showEditUserModal"
       :loading="submitting"
       @submit="handleUserSubmit"
       @close="handleCloseUserModal"
@@ -457,22 +458,41 @@ const editUser = (user: User) => {
   showEditUserModal.value = true
 }
 
-const toggleUserStatus = async (user: User) => {
-  try {
-    operatingUsers.value.add(user.id)
-    const newStatus = user.status === 'active' ? 'inactive' : 'active'
-    
-    await api.user.updateUserStatus(user.id, newStatus)
-    
-    // 更新本地状态
-    user.status = newStatus
+const toggleUserStatus = (user: User) => {
+  const newStatus = user.status === 'active' ? 'inactive' : 'active'
+  const action = newStatus === 'active' ? '启用' : '禁用'
+  
+  confirmConfig.value = {
+    title: `${action}用户`,
+    message: `确定要${action}用户 "${user.nickname || user.username}" 吗？`,
+    details: [
+      `用户名：${user.username}`,
+      `邮箱：${user.email || '无'}`,
+      `当前状态：${user.status === 'active' ? '启用' : '禁用'}`,
+      `${action}后用户${newStatus === 'active' ? '可以正常登录和使用系统' : '将无法登录系统'}`
+    ],
+    type: newStatus === 'active' ? 'success' : 'warning',
+    confirmText: action,
+    confirmIcon: newStatus === 'active' ? 'check' : 'ban',
+    loading: false,
+    onConfirm: async () => {
+      try {
+        operatingUsers.value.add(user.id)
+        
+        await api.user.updateUserStatus(user.id, newStatus)
+        
+        // 更新本地状态
+        user.status = newStatus
 
-  } catch (err) {
-    error.value = err instanceof Error ? err.message : '更新用户状态失败'
-    console.error('更新用户状态失败:', err)
-  } finally {
-    operatingUsers.value.delete(user.id)
+      } catch (err) {
+        error.value = err instanceof Error ? err.message : '更新用户状态失败'
+        console.error('更新用户状态失败:', err)
+      } finally {
+        operatingUsers.value.delete(user.id)
+      }
+    }
   }
+  showConfirmModal.value = true
 }
 
 const deleteUser = (user: User) => {

@@ -849,21 +849,41 @@ const editGroup = (group: UserGroup) => {
   showGroupModal.value = true
 }
 
-const toggleGroupStatus = async (group: UserGroup) => {
-  try {
-    operatingGroups.value.add(group.id)
-    const newStatus = group.status === 'active' ? 'inactive' : 'active'
-    
-    await api.group.updateGroupStatus(group.id, newStatus)
-    
-    // 更新本地状态
-    group.status = newStatus
-  } catch (err) {
-    error.value = err instanceof Error ? err.message : '更新用户组状态失败'
-    console.error('更新用户组状态失败:', err)
-  } finally {
-    operatingGroups.value.delete(group.id)
+const toggleGroupStatus = (group: UserGroup) => {
+  const newStatus = group.status === 'active' ? 'inactive' : 'active'
+  const action = newStatus === 'active' ? '启用' : '禁用'
+  
+  confirmConfig.value = {
+    title: `${action}用户组`,
+    message: `确定要${action}用户组 "${group.name}" 吗？`,
+    details: [
+      `用户组名称：${group.name}`,
+      `用户组编码：${group.code}`,
+      `成员数量：${group.memberCount || 0}`,
+      `当前状态：${group.status === 'active' ? '启用' : '禁用'}`,
+      `${action}后该用户组${newStatus === 'active' ? '将恢复正常功能' : '的所有成员将受到影响'}`
+    ],
+    type: newStatus === 'active' ? 'success' : 'warning',
+    confirmText: action,
+    confirmIcon: newStatus === 'active' ? 'check' : 'ban',
+    loading: false,
+    onConfirm: async () => {
+      try {
+        operatingGroups.value.add(group.id)
+        
+        await api.group.updateGroupStatus(group.id, newStatus)
+        
+        // 更新本地状态
+        group.status = newStatus
+      } catch (err) {
+        error.value = err instanceof Error ? err.message : '更新用户组状态失败'
+        console.error('更新用户组状态失败:', err)
+      } finally {
+        operatingGroups.value.delete(group.id)
+      }
+    }
   }
+  showConfirmModal.value = true
 }
 
 const deleteGroup = (group: UserGroup) => {
@@ -1775,9 +1795,11 @@ const handleViewChange = () => {
   font-size: 14px;
 }
 
-.action-buttons {
+.action-buttons,
+.member-actions {
   display: flex;
   gap: 8px;
+  align-items: center;
 }
 
 .action-icon {

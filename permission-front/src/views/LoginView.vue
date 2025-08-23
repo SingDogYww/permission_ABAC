@@ -150,6 +150,9 @@
         <div class="register">
           还没有账号? <a href="#" @click="goToRegister">立即注册</a>
         </div>
+        
+        <!-- 演示账户信息 -->
+        <DemoAccountsInfo @select-account="onSelectAccount" />
       </div>
     </div>
   </div>
@@ -160,8 +163,12 @@ import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { tsParticles } from '@tsparticles/engine'
 import { loadSlim } from '@tsparticles/slim'
+import { useUserStore } from '@/stores/user'
+import { message } from 'ant-design-vue'
+import DemoAccountsInfo from '@/components/Common/DemoAccountsInfo.vue'
 
 const router = useRouter()
+const userStore = useUserStore()
 
 // 响应式数据
 const activeTab = ref('username')
@@ -300,32 +307,78 @@ const sendCode = () => {
   }, 1000)
 }
 
-const handleLogin = () => {
-  // TODO: 实现登录逻辑
-  // 暂时设置一个token以通过路由守卫
-  localStorage.setItem('token', 'temp-token-for-demo')
-  // 跳转到管理平台
-  router.push('/dashboard')
+const handleLogin = async () => {
+  if (!usernameForm.username || !usernameForm.password) {
+    message.error('请填写用户名和密码')
+    return
+  }
+
+  try {
+    // 首先尝试使用演示数据登录
+    const success = userStore.tempLogin(usernameForm.username, usernameForm.password)
+    
+    if (success) {
+      message.success(`登录成功，欢迎 ${userStore.user?.nickname}`)
+      router.push('/dashboard')
+      return
+    }
+
+    // 如果演示登录失败，尝试模拟API登录
+    await userStore.login({
+      username: usernameForm.username,
+      password: usernameForm.password,
+      loginType: 'username'
+    })
+    
+    message.success('登录成功')
+    router.push('/dashboard')
+  } catch (error) {
+    message.error('用户名或密码错误')
+  }
 }
 
-const handlePhoneLogin = () => {
-  // TODO: 实现手机登录逻辑
-  // 暂时设置一个token以通过路由守卫
-  localStorage.setItem('token', 'temp-token-for-demo')
-  // 跳转到管理平台
-  router.push('/dashboard')
+const handlePhoneLogin = async () => {
+  if (!phoneForm.phone || !phoneForm.code) {
+    message.error('请填写手机号和验证码')
+    return
+  }
+
+  try {
+    // 暂时使用临时登录
+    userStore.tempLogin('phone_user')
+    message.success('手机登录成功')
+    router.push('/dashboard')
+  } catch (error) {
+    message.error('登录失败')
+  }
 }
 
-const handleEmailLogin = () => {
-  // TODO: 实现邮箱登录逻辑
-  // 暂时设置一个token以通过路由守卫
-  localStorage.setItem('token', 'temp-token-for-demo')
-  // 跳转到管理平台
-  router.push('/dashboard')
+const handleEmailLogin = async () => {
+  if (!emailForm.email || !emailForm.password) {
+    message.error('请填写邮箱和密码')
+    return
+  }
+
+  try {
+    // 暂时使用临时登录
+    userStore.tempLogin('email_user')
+    message.success('邮箱登录成功')
+    router.push('/dashboard')
+  } catch (error) {
+    message.error('登录失败')
+  }
 }
 
 const goToRegister = () => {
   router.push('/register')
+}
+
+// 选择演示账户
+const onSelectAccount = (username: string, password: string) => {
+  usernameForm.username = username
+  usernameForm.password = password
+  // 自动切换到用户名登录标签
+  activeTab.value = 'username'
 }
 </script>
 

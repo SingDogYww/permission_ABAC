@@ -14,6 +14,7 @@ declare module 'vue' {
     ACol: typeof import('ant-design-vue/es')['Col']
     AddMemberModal: typeof import('./src/components/Group/AddMemberModal.vue')['default']
     AddUserToGroupModal: typeof import('./src/components/Modals/AddUserToGroupModal.vue')['default']
+    AEmpty: typeof import('ant-design-vue/es')['Empty']
     AList: typeof import('ant-design-vue/es')['List']
     AListItem: typeof import('ant-design-vue/es')['ListItem']
     AListItemMeta: typeof import('ant-design-vue/es')['ListItemMeta']
@@ -26,6 +27,7 @@ declare module 'vue' {
     BaseModal: typeof import('./src/components/Common/BaseModal.vue')['default']
     ChangeAvatarModal: typeof import('./src/components/Modals/ChangeAvatarModal.vue')['default']
     ConfirmModal: typeof import('./src/components/Common/ConfirmModal.vue')['default']
+    DemoAccountsInfo: typeof import('./src/components/Common/DemoAccountsInfo.vue')['default']
     EditMemberModal: typeof import('./src/components/Group/EditMemberModal.vue')['default']
     EditUserModal: typeof import('./src/components/Modals/EditUserModal.vue')['default']
     GroupFormModal: typeof import('./src/components/Group/GroupFormModal.vue')['default']
@@ -34,6 +36,7 @@ declare module 'vue' {
     GroupModal: typeof import('./src/components/Group/GroupModal.vue')['default']
     GroupTree: typeof import('./src/components/Group/GroupTree.vue')['default']
     ImportModal: typeof import('./src/components/User/ImportModal.vue')['default']
+    LoadingSpinner: typeof import('./src/components/Common/LoadingSpinner.vue')['default']
     MainLayout: typeof import('./src/components/Layout/MainLayout.vue')['default']
     MemberManagementModal: typeof import('./src/components/Group/MemberManagementModal.vue')['default']
     MemberModal: typeof import('./src/components/Group/MemberModal.vue')['default']
@@ -42,6 +45,7 @@ declare module 'vue' {
     RouterView: typeof import('vue-router')['RouterView']
     TreeModal: typeof import('./src/components/Group/TreeModal.vue')['default']
     TreeNode: typeof import('./src/components/Group/TreeNode.vue')['default']
+    UserInfo: typeof import('./src/components/Common/UserInfo.vue')['default']
     UserModal: typeof import('./src/components/User/UserModal.vue')['default']
   }
 }

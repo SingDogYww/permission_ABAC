@@ -1,13 +1,21 @@
 <template>
-  <div class="system-logs">
+  <div class="system-logs-page">
     <div class="page-header">
-      <h1>系统日志</h1>
-      <p>查看系统运行日志和错误信息</p>
+      <div class="page-title">
+        <h1>
+          <font-awesome-icon icon="file-lines" />
+          系统日志
+        </h1>
+        <p>查看系统运行日志和错误信息</p>
+      </div>
     </div>
     
-    <div class="management-content">
-      <h2>系统日志功能开发中...</h2>
-      <p>此页面将包含系统日志查看和分析功能。</p>
+    <div class="content-card">
+      <div class="placeholder-content">
+        <font-awesome-icon icon="file-lines" size="3x" />
+        <h2>系统日志功能开发中...</h2>
+        <p>此页面将包含系统日志查看和分析功能。</p>
+      </div>
     </div>
   </div>
 </template>
@@ -16,33 +24,75 @@
 </script>
 
 <style scoped>
-.system-logs {
-  padding: var(--spacing-lg);
+.system-logs-page {
+  padding: 0;
+  min-height: calc(100vh - 70px);
 }
 
-.page-header h1 {
-  color: var(--text-primary);
-  margin-bottom: var(--spacing-sm);
+.page-header {
+  margin-bottom: 32px;
 }
 
-.page-header p {
-  color: var(--text-secondary);
-  margin-bottom: var(--spacing-xl);
+.page-title h1 {
+  margin: 0 0 8px 0;
+  font-size: 28px;
+  font-weight: 600;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
-.management-content {
-  background: var(--bg-card);
-  border-radius: var(--radius-lg);
-  padding: var(--spacing-xl);
-  border: 1px solid var(--border-primary);
+.page-title svg {
+  color: #00eeff;
+  text-shadow: 0 0 8px rgba(0, 238, 255, 0.5);
 }
 
-.management-content h2 {
-  color: var(--primary-color);
-  margin-bottom: var(--spacing-md);
+.page-title p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 16px;
 }
 
-.management-content p {
-  color: var(--text-secondary);
+.content-card {
+  background: rgba(15, 23, 42, 0.8);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(0, 238, 255, 0.2);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.content-card:hover {
+  border-color: rgba(0, 238, 255, 0.4);
+  box-shadow: 0 4px 20px rgba(0, 238, 255, 0.1);
+}
+
+.placeholder-content {
+  text-align: center;
+  padding: 80px 40px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.placeholder-content svg {
+  color: #00eeff;
+  margin-bottom: 24px;
+  filter: drop-shadow(0 0 8px rgba(0, 238, 255, 0.3));
+}
+
+.placeholder-content h2 {
+  margin: 24px 0 16px 0;
+  color: #fff;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.placeholder-content p {
+  margin: 12px 0;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.7);
 }
 </style> 

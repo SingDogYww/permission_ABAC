@@ -5,17 +5,17 @@
       <div class="welcome-section">
         <h1 class="page-title">
           <font-awesome-icon icon="tachometer-alt" class="title-icon" />
-          系统仪表板
+          数据概览
         </h1>
         <p class="welcome-text">
           欢迎回来，{{ userInfo.name }}！今天是 {{ currentDate }}
         </p>
       </div>
       <div class="header-actions">
-        <a-button type="primary" @click="refreshData" :loading="loading">
-          <font-awesome-icon icon="sync-alt" />
+        <button class="theme-button primary" @click="refreshData" :disabled="loading">
+          <font-awesome-icon icon="sync-alt" :class="{ spinning: loading }" />
           刷新数据
-        </a-button>
+        </button>
       </div>
     </div>
 
@@ -28,7 +28,7 @@
         <div class="stat-content">
           <div class="stat-value">
             <transition name="fade" mode="out-in">
-              <a-skeleton v-if="loading" active :paragraph="false" />
+              <div v-if="loading" class="skeleton-text large"></div>
               <span v-else class="value-number">{{ stat.value }}</span>
             </transition>
           </div>
@@ -55,22 +55,24 @@
               <font-awesome-icon icon="chart-line" />
               用户访问趋势
             </h3>
-                      <div class="card-actions">
-            <select 
-              v-model="accessPeriod" 
-              class="native-theme-select" 
-              @change="onPeriodChange"
-            >
-              <option value="7d">最近7天</option>
-              <option value="30d">最近30天</option>
-              <option value="90d">最近90天</option>
-            </select>
-          </div>
+            <div class="card-actions">
+              <select 
+                v-model="accessPeriod" 
+                class="native-theme-select" 
+                @change="onPeriodChange"
+              >
+                <option value="7d">最近7天</option>
+                <option value="30d">最近30天</option>
+                <option value="90d">最近90天</option>
+              </select>
+            </div>
           </div>
           <div class="chart-container">
-            <a-spin :spinning="chartLoading">
-              <div ref="accessTrendChart" class="chart"></div>
-            </a-spin>
+            <div v-if="chartLoading" class="chart-loading">
+              <div class="loading-pulse"></div>
+              <span>加载中...</span>
+            </div>
+            <div ref="accessTrendChart" class="chart" :style="{ opacity: chartLoading ? 0.3 : 1 }"></div>
           </div>
         </div>
 
@@ -104,31 +106,34 @@
             近期操作日志
           </h3>
           <div class="card-actions">
-            <a-button size="small" class="theme-button" @click="viewAllLogs">
-              <font-awesome-icon icon="arrow-right" class="button-icon" />
+            <button class="theme-button small" @click="viewAllLogs">
+              <font-awesome-icon icon="arrow-right" />
               查看全部
-            </a-button>
+            </button>
           </div>
         </div>
         <div class="activity-timeline">
-          <a-spin :spinning="logsLoading">
-            <template v-if="!logsLoading && recentLogs.length === 0">
-              <a-empty description="暂无操作日志" />
-            </template>
-            <template v-else>
-              <div class="timeline-item" v-for="log in recentLogs" :key="log.id">
-                <div class="timeline-dot" :class="log.type"></div>
-                <div class="timeline-content">
-                  <div class="timeline-header">
-                    <span class="timeline-user">{{ log.user }}</span>
-                    <span class="timeline-action">{{ log.action }}</span>
-                    <span class="timeline-time">{{ log.time }}</span>
-                  </div>
-                  <div class="timeline-detail">{{ log.detail }}</div>
+          <div v-if="logsLoading" class="loading-state">
+            <div class="loading-pulse"></div>
+            <span>加载中...</span>
+          </div>
+          <div v-else-if="recentLogs.length === 0" class="empty-state">
+            <font-awesome-icon icon="clock" class="empty-icon" />
+            <span>暂无操作日志</span>
+          </div>
+          <div v-else>
+            <div class="timeline-item" v-for="log in recentLogs" :key="log.id">
+              <div class="timeline-dot" :class="log.type"></div>
+              <div class="timeline-content">
+                <div class="timeline-header">
+                  <span class="timeline-user">{{ log.user }}</span>
+                  <span class="timeline-action">{{ log.action }}</span>
+                  <span class="timeline-time">{{ log.time }}</span>
                 </div>
+                <div class="timeline-detail">{{ log.detail }}</div>
               </div>
-            </template>
-          </a-spin>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -138,40 +143,46 @@
           <h3 class="card-title">
             <font-awesome-icon icon="bell" />
             系统通知
+            <span v-if="unreadNotifications > 0" class="notification-badge">{{ unreadNotifications }}</span>
           </h3>
           <div class="card-actions">
-            <a-badge :count="unreadNotifications" size="small">
-              <a-button size="small" class="theme-button" @click="markAllRead" :disabled="unreadNotifications === 0">
-                <font-awesome-icon icon="check-double" class="button-icon" />
-                全部已读
-              </a-button>
-            </a-badge>
+            <button 
+              class="theme-button small" 
+              @click="markAllRead" 
+              :disabled="unreadNotifications === 0"
+            >
+              <font-awesome-icon icon="check-double" />
+              全部已读
+            </button>
           </div>
         </div>
         <div class="notification-list">
-          <a-spin :spinning="notificationsLoading">
-            <template v-if="!notificationsLoading && notifications.length === 0">
-              <a-empty description="暂无通知" />
-            </template>
-            <template v-else>
-              <div class="notification-item" v-for="notification in notifications" :key="notification.id" :class="{ unread: !notification.read }">
-                <div class="notification-icon" :class="notification.type">
-                  <font-awesome-icon :icon="notification.icon" />
-                </div>
-                <div class="notification-content">
-                  <div class="notification-title">{{ notification.title }}</div>
-                  <div class="notification-message">{{ notification.message }}</div>
-                  <div class="notification-time">{{ formatTime(notification.time) }}</div>
-                </div>
-                <div class="notification-actions" v-if="!notification.read">
-                  <a-button size="small" type="text" class="mark-read-button" @click="markAsRead(notification.id)">
-                    <font-awesome-icon icon="check" class="button-icon-small" />
-                    标记已读
-                  </a-button>
-                </div>
+          <div v-if="notificationsLoading" class="loading-state">
+            <div class="loading-pulse"></div>
+            <span>加载中...</span>
+          </div>
+          <div v-else-if="notifications.length === 0" class="empty-state">
+            <font-awesome-icon icon="bell" class="empty-icon" />
+            <span>暂无通知</span>
+          </div>
+          <div v-else>
+            <div class="notification-item" v-for="notification in notifications" :key="notification.id" :class="{ unread: !notification.read }">
+              <div class="notification-icon" :class="notification.type">
+                <font-awesome-icon :icon="notification.icon" />
               </div>
-            </template>
-          </a-spin>
+              <div class="notification-content">
+                <div class="notification-title">{{ notification.title }}</div>
+                <div class="notification-message">{{ notification.message }}</div>
+                <div class="notification-time">{{ formatTime(notification.time) }}</div>
+              </div>
+              <div class="notification-actions" v-if="!notification.read">
+                <button class="mark-read-button" @click="markAsRead(notification.id)">
+                  <font-awesome-icon icon="check" />
+                  标记已读
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -181,7 +192,6 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, nextTick, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { message } from 'ant-design-vue'
 import * as echarts from 'echarts'
 
 // 定义接口类型
@@ -496,7 +506,7 @@ const fetchAccessTrendData = async (period: string) => {
       const dataMap: Record<string, number[]> = {
         '7d': [320, 432, 301, 534, 590, 530, 620],
         '30d': [120, 232, 401, 634, 390, 730, 820, 456, 789, 234, 567, 890, 123, 456, 789, 234, 567, 890, 123, 456, 789, 234, 567, 890, 123, 456, 789, 234, 567, 890],
-        '90d': [220, 332, 201, 434, 490, 630, 720, 356, 689, 134, 467, 790, 223, 556, 689, 334, 467, 790, 223, 556, 689, 334, 467, 790, 223, 556, 689, 334, 467, 790, 220, 332, 201, 434, 490, 630, 720, 356, 689, 134, 467, 790, 223, 556, 689, 334, 467, 790, 223, 556, 689, 334, 467, 790, 223, 556, 689, 334, 467, 790, 220, 332, 201, 434, 490, 630, 720, 356, 689, 134, 467, 790, 223, 556, 689, 334, 467, 790, 223, 556, 689, 334, 467, 790, 223, 556, 689, 334, 467, 790, 223, 556, 689, 334, 467, 790]
+        '90d': [220, 332, 201, 434, 490, 630, 720, 356, 689, 134, 467, 790, 223, 556, 689, 334, 467, 790, 223, 556, 689, 334, 467, 790, 223, 556, 689, 334, 467, 790, 220, 332, 201, 434, 490, 630, 720, 356, 689, 134, 467, 790, 223, 556, 689, 334, 467, 790, 223, 556, 689, 334, 467, 790, 223, 556, 689, 334, 467, 790, 223, 556, 689, 334, 467, 790, 220, 332, 201, 434, 490, 630, 720, 356, 689, 134, 467, 790, 223, 556, 689, 334, 467, 790, 223, 556, 689, 334, 467, 790, 223, 556, 689, 334, 467, 790]
       }
       resolve(dataMap[period] || dataMap['7d'])
     }, 500)
@@ -511,6 +521,11 @@ const formatTime = (timeStr: string) => {
 
 const updateUnreadCount = () => {
   unreadNotifications.value = notifications.value.filter(n => !n.read).length
+}
+
+const showMessage = (message: string, type: 'success' | 'error' = 'success') => {
+  // 简单的消息提示函数，实际项目中可以用更复杂的实现
+  console.log(`${type}: ${message}`)
 }
 
 // 方法
@@ -530,9 +545,9 @@ const refreshData = async () => {
       new Promise(resolve => setTimeout(resolve, 800))
     ])
     
-    message.success('数据刷新成功')
+    showMessage('数据刷新成功')
   } catch (error) {
-    message.error('数据刷新失败，请稍后重试')
+    showMessage('数据刷新失败，请稍后重试', 'error')
     console.error('数据刷新失败:', error)
   } finally {
     // 延迟一点点再隐藏加载状态，让动画更自然
@@ -598,7 +613,7 @@ const handleQuickAction = (action: QuickAction) => {
       router.push(action.route)
     }
   } catch (error) {
-    message.error('页面跳转失败')
+    showMessage('页面跳转失败', 'error')
     console.error('路由跳转失败:', error)
   }
 }
@@ -610,7 +625,7 @@ const viewAllLogs = () => {
 const markAllRead = () => {
   notifications.value.forEach(n => n.read = true)
   updateUnreadCount()
-  message.success('所有通知已标记为已读')
+  showMessage('所有通知已标记为已读')
 }
 
 const markAsRead = (id: number) => {
@@ -618,7 +633,7 @@ const markAsRead = (id: number) => {
   if (notification) {
     notification.read = true
     updateUnreadCount()
-    message.success('通知已标记为已读')
+    showMessage('通知已标记为已读')
   }
 }
 
@@ -746,7 +761,6 @@ onUnmounted(() => {
 <style scoped>
 .dashboard-container {
   padding: 0;
-  min-height: calc(100vh - 70px);
   background: transparent;
 }
 
@@ -755,102 +769,173 @@ onUnmounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: var(--spacing-xl);
-  padding: var(--spacing-lg);
-  background: var(--bg-card);
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--border-primary);
+  margin-bottom: 32px;
 }
 
 .welcome-section .page-title {
-  color: var(--text-primary);
-  font-size: var(--font-size-3xl);
-  font-weight: var(--font-weight-semibold);
-  margin: 0 0 var(--spacing-sm) 0;
   display: flex;
   align-items: center;
-  gap: var(--spacing-md);
+  gap: 12px;
+  font-size: 28px;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 8px;
 }
 
 .title-icon {
-  color: var(--primary-color);
-  text-shadow: var(--shadow-glow);
+  color: #00eeff;
+  text-shadow: 0 0 10px rgba(0, 238, 255, 0.7);
 }
 
 .welcome-text {
-  color: var(--text-secondary);
-  font-size: var(--font-size-base);
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 16px;
   margin: 0;
 }
 
-.header-actions .ant-btn {
-  background: var(--primary-gradient);
+/* 统一的按钮样式 */
+.theme-button {
+  padding: 12px 20px;
+  background: linear-gradient(45deg, #00eeff, #00b4db);
   border: none;
-  color: var(--text-on-primary);
-  font-weight: var(--font-weight-medium);
-  box-shadow: var(--shadow-button);
-  transition: var(--transition-normal);
+  border-radius: 8px;
+  color: #0f2027;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  text-decoration: none;
 }
 
-.header-actions .ant-btn:hover {
+.theme-button:hover:not(:disabled) {
+  background: linear-gradient(45deg, #00b4db, #00eeff);
   transform: translateY(-2px);
-  box-shadow: var(--shadow-glow-strong);
+  box-shadow: 0 4px 12px rgba(0, 238, 255, 0.3);
+}
+
+.theme-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.theme-button.small {
+  padding: 8px 16px;
+  font-size: 12px;
+}
+
+.theme-button.primary {
+  padding: 12px 20px;
+}
+
+.theme-button svg {
+  transition: transform 0.3s ease;
+}
+
+.theme-button:hover svg {
+  transform: scale(1.1);
+}
+
+.spinning {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 /* 统计卡片网格 */
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: var(--spacing-lg);
-  margin-bottom: var(--spacing-xl);
+  gap: 24px;
+  margin-bottom: 32px;
 }
 
 .stat-card {
   display: flex;
   align-items: center;
-  gap: var(--spacing-lg);
-  padding: var(--spacing-xl);
-  background: var(--bg-card);
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--border-primary);
-  transition: var(--transition-normal);
+  gap: 24px;
+  padding: 32px;
+  background: rgba(15, 23, 42, 0.8);
   backdrop-filter: blur(10px);
+  border: 1px solid rgba(0, 238, 255, 0.2);
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(0, 238, 255, 0.05), transparent);
+  transition: left 0.8s ease;
 }
 
 .stat-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-glow);
-  border-color: var(--border-accent);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 30px rgba(0, 238, 255, 0.15);
+  border-color: #00eeff;
+}
+
+.stat-card:hover::before {
+  left: 100%;
 }
 
 .stat-icon {
-  width: 60px;
-  height: 60px;
+  width: 65px;
+  height: 65px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: var(--radius-lg);
-  font-size: var(--font-size-2xl);
+  border-radius: 12px;
+  font-size: 24px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.stat-card:hover .stat-icon {
+  transform: scale(1.05);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
 }
 
 .stat-icon.primary {
-  background: rgba(0, 238, 255, 0.15);
-  color: var(--primary-color);
+  background: linear-gradient(135deg, rgba(0, 238, 255, 0.2), rgba(0, 238, 255, 0.1));
+  color: #00eeff;
+  border: 1px solid rgba(0, 238, 255, 0.3);
+  text-shadow: 0 0 10px rgba(0, 238, 255, 0.5);
 }
 
 .stat-icon.success {
-  background: var(--success-bg);
-  color: var(--success-color);
+  background: linear-gradient(135deg, rgba(46, 204, 113, 0.2), rgba(46, 204, 113, 0.1));
+  color: #2ecc71;
+  border: 1px solid rgba(46, 204, 113, 0.3);
+  text-shadow: 0 0 10px rgba(46, 204, 113, 0.4);
 }
 
 .stat-icon.info {
-  background: var(--info-bg);
-  color: var(--info-color);
+  background: linear-gradient(135deg, rgba(72, 219, 251, 0.2), rgba(72, 219, 251, 0.1));
+  color: #48dbfb;
+  border: 1px solid rgba(72, 219, 251, 0.3);
+  text-shadow: 0 0 10px rgba(72, 219, 251, 0.4);
 }
 
 .stat-icon.warning {
-  background: var(--warning-bg);
-  color: var(--warning-color);
+  background: linear-gradient(135deg, rgba(254, 202, 87, 0.2), rgba(254, 202, 87, 0.1));
+  color: #feca57;
+  border: 1px solid rgba(254, 202, 87, 0.3);
+  text-shadow: 0 0 10px rgba(254, 202, 87, 0.4);
 }
 
 .stat-content {
@@ -858,44 +943,62 @@ onUnmounted(() => {
 }
 
 .stat-value {
-  font-size: var(--font-size-3xl);
-  font-weight: var(--font-weight-bold);
-  color: var(--text-primary);
-  margin-bottom: var(--spacing-xs);
+  font-size: 28px;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 4px;
 }
 
 .stat-title {
-  font-size: var(--font-size-base);
-  color: var(--text-secondary);
-  margin-bottom: var(--spacing-xs);
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 4px;
 }
 
 .stat-change {
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
+  font-size: 14px;
+  font-weight: 500;
   display: flex;
   align-items: center;
-  gap: var(--spacing-xs);
+  gap: 4px;
 }
 
 .stat-change.increase {
-  color: var(--success-color);
+  color: #2ecc71;
 }
 
 .stat-change.decrease {
-  color: var(--error-color);
+  color: #e74c3c;
+}
+
+/* 骨架屏样式 */
+.skeleton-text {
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.1) 25%, rgba(255, 255, 255, 0.2) 50%, rgba(255, 255, 255, 0.1) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 4px;
+}
+
+.skeleton-text.large {
+  height: 32px;
+  width: 80px;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
 }
 
 /* 图表区域 */
 .charts-section {
-  margin-bottom: var(--spacing-xl);
+  margin-bottom: 32px;
 }
 
 .chart-row {
   display: grid;
   grid-template-columns: 2fr 1fr;
-  gap: var(--spacing-lg);
-  margin-bottom: var(--spacing-lg);
+  gap: 24px;
+  margin-bottom: 24px;
 }
 
 .chart-full {
@@ -903,43 +1006,56 @@ onUnmounted(() => {
 }
 
 .chart-card {
-  background: var(--bg-card);
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--border-primary);
+  background: rgba(15, 23, 42, 0.8);
   backdrop-filter: blur(10px);
+  border: 1px solid rgba(0, 238, 255, 0.2);
+  border-radius: 12px;
   overflow: hidden;
-  transition: var(--transition-normal);
+  transition: all 0.3s ease;
 }
 
 .chart-card:hover {
-  border-color: var(--border-accent);
+  border-color: #00eeff;
   box-shadow: 0 4px 20px rgba(0, 238, 255, 0.1);
 }
 
 .card-header {
-  padding: var(--spacing-md) var(--spacing-lg);
-  border-bottom: 1px solid var(--border-secondary);
+  padding: 16px 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
 .card-title {
-  color: var(--text-primary);
-  font-size: var(--font-size-lg);
-  font-weight: var(--font-weight-medium);
+  color: #fff;
+  font-size: 18px;
+  font-weight: 600;
   margin: 0;
   display: flex;
   align-items: center;
-  gap: var(--spacing-sm);
+  gap: 8px;
+  transition: color 0.3s ease;
 }
 
 .card-title svg {
-  color: var(--primary-color);
+  color: #00eeff;
+  font-size: 18px;
+  text-shadow: 0 0 8px rgba(0, 238, 255, 0.4);
+  transition: all 0.3s ease;
+}
+
+.chart-card:hover .card-title {
+  color: #00eeff;
+}
+
+.chart-card:hover .card-title svg {
+  transform: scale(1.1);
+  text-shadow: 0 0 12px rgba(0, 238, 255, 0.6);
 }
 
 .chart-container {
-  padding: 0 var(--spacing-sm);
+  padding: 0 8px;
   position: relative;
 }
 
@@ -949,18 +1065,47 @@ onUnmounted(() => {
   transition: opacity 0.3s ease;
 }
 
-.chart:hover {
-  opacity: 0.95;
+.chart-loading {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  color: rgba(255, 255, 255, 0.6);
+  z-index: 10;
 }
 
+/* 选择框样式 */
+.native-theme-select {
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(0, 238, 255, 0.2);
+  border-radius: 6px;
+  color: #fff;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
 
+.native-theme-select:focus {
+  outline: none;
+  border-color: #00eeff;
+}
+
+.native-theme-select option {
+  background: #1a2332;
+  color: #fff;
+}
 
 /* 快捷操作 */
 .quick-actions {
-  padding: var(--spacing-md);
+  padding: 16px;
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: var(--spacing-sm);
+  gap: 16px;
 }
 
 .action-card {
@@ -968,93 +1113,153 @@ onUnmounted(() => {
   flex-direction: column;
   align-items: center;
   text-align: center;
-  padding: var(--spacing-lg);
-  border: 1px solid var(--border-primary);
-  border-radius: var(--radius-md);
-  background: var(--bg-secondary);
-  transition: var(--transition-normal);
+  padding: 32px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  transition: all 0.3s ease;
   cursor: pointer;
-  min-height: 120px;
+  min-height: 140px;
+  position: relative;
+  overflow: hidden;
+}
+
+.action-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.05), transparent);
+  transition: left 0.6s ease;
 }
 
 .action-card:hover {
-  background: var(--bg-hover);
-  border-color: var(--primary-color);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 238, 255, 0.15);
+  background: rgba(0, 238, 255, 0.1);
+  border-color: #00eeff;
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px rgba(0, 238, 255, 0.2);
+}
+
+.action-card:hover::before {
+  left: 100%;
 }
 
 .action-icon {
-  width: 40px;
-  height: 40px;
+  width: 50px;
+  height: 50px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: var(--radius-sm);
-  font-size: var(--font-size-lg);
-  margin-bottom: var(--spacing-sm);
+  border-radius: 12px;
+  font-size: 20px;
+  margin-bottom: 16px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.action-card:hover .action-icon {
+  transform: scale(1.1);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
 }
 
 .action-icon.primary {
-  background: rgba(0, 238, 255, 0.15);
-  color: var(--primary-color);
+  background: linear-gradient(135deg, rgba(0, 238, 255, 0.2), rgba(0, 238, 255, 0.1));
+  color: #00eeff;
+  border: 1px solid rgba(0, 238, 255, 0.3);
+  text-shadow: 0 0 8px rgba(0, 238, 255, 0.5);
 }
 
 .action-icon.success {
-  background: var(--success-bg);
-  color: var(--success-color);
+  background: linear-gradient(135deg, rgba(46, 204, 113, 0.2), rgba(46, 204, 113, 0.1));
+  color: #2ecc71;
+  border: 1px solid rgba(46, 204, 113, 0.3);
+  text-shadow: 0 0 8px rgba(46, 204, 113, 0.3);
 }
 
 .action-icon.info {
-  background: var(--info-bg);
-  color: var(--info-color);
+  background: linear-gradient(135deg, rgba(72, 219, 251, 0.2), rgba(72, 219, 251, 0.1));
+  color: #48dbfb;
+  border: 1px solid rgba(72, 219, 251, 0.3);
+  text-shadow: 0 0 8px rgba(72, 219, 251, 0.3);
 }
 
 .action-icon.warning {
-  background: var(--warning-bg);
-  color: var(--warning-color);
+  background: linear-gradient(135deg, rgba(254, 202, 87, 0.2), rgba(254, 202, 87, 0.1));
+  color: #feca57;
+  border: 1px solid rgba(254, 202, 87, 0.3);
+  text-shadow: 0 0 8px rgba(254, 202, 87, 0.3);
 }
 
 .action-title {
-  color: var(--text-primary);
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
-  margin-bottom: var(--spacing-xs);
-  line-height: 1.2;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  line-height: 1.3;
+  transition: color 0.3s ease;
+}
+
+.action-card:hover .action-title {
+  color: #00eeff;
 }
 
 .action-desc {
-  color: var(--text-tertiary);
-  font-size: var(--font-size-xs);
-  line-height: 1.3;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 14px;
+  line-height: 1.4;
+  transition: color 0.3s ease;
+}
+
+.action-card:hover .action-desc {
+  color: rgba(255, 255, 255, 0.8);
 }
 
 /* 活动区域 */
 .activity-section {
   display: grid;
   grid-template-columns: 2fr 1fr;
-  gap: var(--spacing-lg);
+  gap: 24px;
 }
 
 .activity-card,
 .notification-card {
-  background: var(--bg-card);
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--border-primary);
+  background: rgba(15, 23, 42, 0.8);
+  border-radius: 12px;
+  border: 1px solid rgba(0, 238, 255, 0.2);
   backdrop-filter: blur(10px);
   overflow: hidden;
-  transition: var(--transition-normal);
+  transition: all 0.3s ease;
 }
 
 .activity-card:hover,
 .notification-card:hover {
-  border-color: var(--border-accent);
+  border-color: #00eeff;
   box-shadow: 0 4px 20px rgba(0, 238, 255, 0.08);
+}
+
+/* 通知徽章 */
+.notification-badge {
+  background: #e74c3c;
+  color: #fff;
+  font-size: 12px;
+  font-weight: bold;
+  padding: 2px 6px;
+  border-radius: 10px;
+  margin-left: 8px;
+  min-width: 18px;
+  height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* 时间线 */
 .activity-timeline {
-  padding: var(--spacing-lg);
+  padding: 24px;
   max-height: 400px;
   overflow-y: auto;
 }
@@ -1072,20 +1277,20 @@ onUnmounted(() => {
 
 .activity-timeline::-webkit-scrollbar-thumb,
 .notification-list::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(0, 238, 255, 0.3);
   border-radius: 2px;
 }
 
 .activity-timeline::-webkit-scrollbar-thumb:hover,
 .notification-list::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: rgba(0, 238, 255, 0.5);
 }
 
 .timeline-item {
   display: flex;
   align-items: flex-start;
-  gap: var(--spacing-md);
-  margin-bottom: var(--spacing-lg);
+  gap: 16px;
+  margin-bottom: 24px;
   position: relative;
 }
 
@@ -1095,32 +1300,32 @@ onUnmounted(() => {
   left: 6px;
   top: 24px;
   width: 2px;
-  height: calc(100% + var(--spacing-md));
-  background: var(--border-primary);
+  height: calc(100% + 16px);
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .timeline-dot {
   width: 12px;
   height: 12px;
-  border-radius: var(--radius-full);
+  border-radius: 50%;
   margin-top: 4px;
   flex-shrink: 0;
 }
 
 .timeline-dot.success {
-  background: var(--success-color);
+  background: #2ecc71;
 }
 
 .timeline-dot.info {
-  background: var(--info-color);
+  background: #48dbfb;
 }
 
 .timeline-dot.warning {
-  background: var(--warning-color);
+  background: #feca57;
 }
 
 .timeline-dot.error {
-  background: var(--error-color);
+  background: #e74c3c;
 }
 
 .timeline-content {
@@ -1130,36 +1335,36 @@ onUnmounted(() => {
 .timeline-header {
   display: flex;
   align-items: center;
-  gap: var(--spacing-sm);
-  margin-bottom: var(--spacing-xs);
+  gap: 8px;
+  margin-bottom: 4px;
   flex-wrap: wrap;
 }
 
 .timeline-user {
-  color: var(--primary-color);
-  font-weight: var(--font-weight-medium);
-  font-size: var(--font-size-sm);
+  color: #00eeff;
+  font-weight: 600;
+  font-size: 14px;
 }
 
 .timeline-action {
-  color: var(--text-primary);
-  font-size: var(--font-size-sm);
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 14px;
 }
 
 .timeline-time {
-  color: var(--text-tertiary);
-  font-size: var(--font-size-xs);
-  margin-left: auto;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 12px;
 }
 
 .timeline-detail {
-  color: var(--text-secondary);
-  font-size: var(--font-size-sm);
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 13px;
+  line-height: 1.4;
 }
 
 /* 通知列表 */
 .notification-list {
-  padding: var(--spacing-lg);
+  padding: 24px;
   max-height: 400px;
   overflow-y: auto;
 }
@@ -1167,59 +1372,59 @@ onUnmounted(() => {
 .notification-item {
   display: flex;
   align-items: flex-start;
-  gap: var(--spacing-md);
-  padding: var(--spacing-md);
-  margin-bottom: var(--spacing-sm);
-  border-radius: var(--radius-md);
-  transition: var(--transition-normal);
-}
-
-.notification-item.unread {
-  background: rgba(0, 238, 255, 0.05);
-  border-left: 3px solid var(--primary-color);
-}
-
-.notification-item.unread .notification-title {
-  font-weight: var(--font-weight-semibold);
+  gap: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: all 0.3s ease;
+  cursor: pointer;
 }
 
 .notification-item:hover {
-  background: var(--bg-hover);
+  background: rgba(0, 238, 255, 0.05);
+  border-color: rgba(0, 238, 255, 0.2);
 }
 
-.notification-item.unread:hover {
-  background: rgba(0, 238, 255, 0.08);
+.notification-item.unread {
+  background: rgba(0, 238, 255, 0.03);
+  border-color: rgba(0, 238, 255, 0.1);
 }
 
 .notification-icon {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: var(--radius-md);
-  font-size: var(--font-size-base);
+  border-radius: 8px;
+  font-size: 16px;
   flex-shrink: 0;
 }
 
-.notification-icon.success {
-  background: var(--success-bg);
-  color: var(--success-color);
+.notification-icon.warning {
+  background: rgba(254, 202, 87, 0.1);
+  color: #feca57;
+  border: 1px solid rgba(254, 202, 87, 0.3);
 }
 
 .notification-icon.info {
-  background: var(--info-bg);
-  color: var(--info-color);
-}
-
-.notification-icon.warning {
-  background: var(--warning-bg);
-  color: var(--warning-color);
+  background: rgba(72, 219, 251, 0.1);
+  color: #48dbfb;
+  border: 1px solid rgba(72, 219, 251, 0.3);
 }
 
 .notification-icon.error {
-  background: var(--error-bg);
-  color: var(--error-color);
+  background: rgba(231, 76, 60, 0.1);
+  color: #e74c3c;
+  border: 1px solid rgba(231, 76, 60, 0.3);
+}
+
+.notification-icon.success {
+  background: rgba(46, 204, 113, 0.1);
+  color: #2ecc71;
+  border: 1px solid rgba(46, 204, 113, 0.3);
 }
 
 .notification-content {
@@ -1227,436 +1432,122 @@ onUnmounted(() => {
 }
 
 .notification-title {
-  color: var(--text-primary);
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
-  margin-bottom: var(--spacing-xs);
+  color: #fff;
+  font-weight: 600;
+  font-size: 14px;
+  margin-bottom: 4px;
 }
 
 .notification-message {
-  color: var(--text-secondary);
-  font-size: var(--font-size-sm);
-  margin-bottom: var(--spacing-xs);
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 13px;
+  line-height: 1.4;
+  margin-bottom: 4px;
 }
 
 .notification-time {
-  color: var(--text-tertiary);
-  font-size: var(--font-size-xs);
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 12px;
 }
 
-.notification-actions {
-  flex-shrink: 0;
+.mark-read-button {
+  background: transparent;
+  border: 1px solid rgba(0, 238, 255, 0.3);
+  color: #00eeff;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
-/* 加载状态样式 */
-.stat-value .ant-skeleton-input {
-  height: 2.5rem;
-  border-radius: var(--radius-sm);
+.mark-read-button:hover {
+  background: rgba(0, 238, 255, 0.1);
+  border-color: #00eeff;
 }
 
-.ant-empty {
-  padding: var(--spacing-lg);
-}
-
-.ant-spin-container {
-  min-height: 200px;
-}
-
-/* 卡片加载状态 */
-.stat-card.loading {
-  position: relative;
-  overflow: hidden;
-}
-
+/* 加载和空状态 */
 .loading-overlay {
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(15, 23, 42, 0.1);
-  backdrop-filter: blur(1px);
-  z-index: 1;
+  background: rgba(15, 23, 42, 0.8);
   display: flex;
   align-items: center;
   justify-content: center;
+  backdrop-filter: blur(2px);
 }
 
 .loading-pulse {
   width: 40px;
   height: 40px;
+  border: 3px solid rgba(0, 238, 255, 0.3);
+  border-top: 3px solid #00eeff;
   border-radius: 50%;
-  background: var(--primary-color);
-  opacity: 0.3;
-  animation: pulse-loading 1.5s ease-in-out infinite;
+  animation: spin 1s linear infinite;
 }
 
-@keyframes pulse-loading {
-  0% {
-    transform: scale(0.8);
-    opacity: 0.3;
-  }
-  50% {
-    transform: scale(1.2);
-    opacity: 0.1;
-  }
-  100% {
-    transform: scale(0.8);
-    opacity: 0.3;
-  }
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  color: rgba(255, 255, 255, 0.6);
+  gap: 12px;
 }
 
-/* 数值动画 */
-.value-number {
-  animation: fadeInUp 0.6s ease-out;
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  color: rgba(255, 255, 255, 0.6);
+  gap: 12px;
 }
 
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* 过渡动画 */
-.fade-enter-active, .fade-leave-active {
-  transition: all 0.3s ease;
-}
-
-.fade-enter-from {
-  opacity: 0;
-  transform: translateY(10px);
-}
-
-.fade-leave-to {
-  opacity: 0;
-  transform: translateY(-10px);
-}
-
-/* 已合并到通知列表样式部分 */
-
-/* 精致的主题按钮样式 */
-.theme-button {
-  border: 1px solid rgba(255, 255, 255, 0.2) !important;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05)) !important;
-  color: var(--text-primary) !important;
-  border-radius: 6px !important;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-  font-weight: 500 !important;
-  font-size: 12px !important;
-  height: 30px !important;
-  padding: 0 14px !important;
-  position: relative !important;
-  overflow: hidden !important;
-  backdrop-filter: blur(8px) !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
-}
-
-.theme-button::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
-  transition: left 0.6s ease;
-}
-
-.theme-button:hover {
-  background: linear-gradient(135deg, rgba(0, 238, 255, 0.15), rgba(0, 238, 255, 0.08)) !important;
-  border-color: rgba(0, 238, 255, 0.4) !important;
-  color: var(--primary-color) !important;
-  transform: translateY(-1px) !important;
-  box-shadow: 0 4px 16px rgba(0, 238, 255, 0.2) !important;
-}
-
-.theme-button:hover::before {
-  left: 100%;
-}
-
-.theme-button:active {
-  transform: translateY(0) !important;
-  box-shadow: 0 2px 8px rgba(0, 238, 255, 0.15) !important;
-}
-
-.theme-button:focus {
-  background: linear-gradient(135deg, rgba(0, 238, 255, 0.15), rgba(0, 238, 255, 0.08)) !important;
-  border-color: var(--primary-color) !important;
-  color: var(--primary-color) !important;
-  outline: none !important;
-  box-shadow: 0 0 0 2px rgba(0, 238, 255, 0.2) !important;
-}
-
-/* 精致的主题选择器样式 */
-.native-theme-select {
-  appearance: none;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  
-  /* 精致的尺寸和间距 */
-  width: 110px;
-  height: 30px;
-  padding: 6px 28px 6px 12px;
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--text-primary);
-  
-  /* 精致的背景和边框 */
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.06));
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 6px;
-  outline: none;
-  cursor: pointer;
-  position: relative;
-  backdrop-filter: blur(8px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  
-  /* 平滑的过渡动画 */
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  
-  /* 精致的箭头图标 */
-  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2300eeff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpath d='M6 9l6 6 6-6'/%3e%3c/svg%3e");
-  background-repeat: no-repeat;
-  background-position: right 8px center;
-  background-size: 12px;
-}
-
-/* 精致的悬停效果 */
-.native-theme-select:hover {
-  background: linear-gradient(135deg, rgba(0, 238, 255, 0.15), rgba(0, 238, 255, 0.08));
-  border-color: rgba(0, 238, 255, 0.4);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 16px rgba(0, 238, 255, 0.15);
-}
-
-/* 聚焦效果 */
-.native-theme-select:focus {
-  border-color: var(--primary-color);
-  background: linear-gradient(135deg, rgba(0, 238, 255, 0.15), rgba(0, 238, 255, 0.08));
-  outline: none;
-  box-shadow: 0 0 0 2px rgba(0, 238, 255, 0.2);
-  transform: translateY(-1px);
-}
-
-/* 精致的选项样式 */
-.native-theme-select option {
-  background: rgba(20, 30, 45, 0.98);
-  color: var(--text-primary);
-  padding: 8px 12px;
-  border: none;
-  font-size: 12px;
-  font-weight: 500;
-  transition: all 0.2s ease;
-}
-
-.native-theme-select option:hover {
-  background: rgba(0, 238, 255, 0.15);
-  color: var(--primary-color);
-}
-
-.native-theme-select option:checked,
-.native-theme-select option:selected {
-  background: linear-gradient(135deg, rgba(0, 238, 255, 0.25), rgba(0, 238, 255, 0.15));
-  color: var(--primary-color);
-  font-weight: 600;
-}
-
-/* 精致的按钮禁用状态 */
-.theme-button:disabled {
-  opacity: 0.5 !important;
-  cursor: not-allowed !important;
-  background: rgba(255, 255, 255, 0.03) !important;
-  border-color: rgba(255, 255, 255, 0.08) !important;
-  color: var(--text-disabled) !important;
-  transform: none !important;
-  box-shadow: none !important;
-  backdrop-filter: none !important;
-}
-
-.theme-button:disabled:hover {
-  background: rgba(255, 255, 255, 0.03) !important;
-  border-color: rgba(255, 255, 255, 0.08) !important;
-  transform: none !important;
-  box-shadow: none !important;
-}
-
-.theme-button:disabled::before {
-  display: none !important;
-}
-
-/* 精致的标记已读按钮样式 */
-.mark-read-button {
-  border: 1px solid rgba(255, 255, 255, 0.15) !important;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03)) !important;
-  color: var(--text-secondary) !important;
-  border-radius: 5px !important;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-  font-weight: 500 !important;
-  font-size: 11px !important;
-  height: 26px !important;
-  padding: 0 10px !important;
-  min-width: auto !important;
-  position: relative !important;
-  overflow: hidden !important;
-  backdrop-filter: blur(4px) !important;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1) !important;
-}
-
-.mark-read-button::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(0, 238, 255, 0.1), transparent);
-  transition: left 0.5s ease;
-}
-
-.mark-read-button:hover {
-  background: linear-gradient(135deg, rgba(0, 238, 255, 0.12), rgba(0, 238, 255, 0.06)) !important;
-  border-color: rgba(0, 238, 255, 0.3) !important;
-  color: var(--primary-color) !important;
-  transform: translateY(-1px) scale(1.02) !important;
-  box-shadow: 0 3px 12px rgba(0, 238, 255, 0.15) !important;
-}
-
-.mark-read-button:hover::before {
-  left: 100%;
-}
-
-.mark-read-button:active {
-  transform: translateY(0) scale(1) !important;
-  box-shadow: 0 1px 6px rgba(0, 238, 255, 0.1) !important;
-}
-
-.mark-read-button:focus {
-  background: linear-gradient(135deg, rgba(0, 238, 255, 0.12), rgba(0, 238, 255, 0.06)) !important;
-  border-color: rgba(0, 238, 255, 0.4) !important;
-  color: var(--primary-color) !important;
-  outline: none !important;
-  box-shadow: 0 0 0 1px rgba(0, 238, 255, 0.2) !important;
-}
-
-/* 按钮图标样式 */
-.button-icon {
-  margin-right: 6px !important;
-  font-size: 10px !important;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-}
-
-.button-icon-small {
-  margin-right: 4px !important;
-  font-size: 9px !important;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-}
-
-.theme-button:hover .button-icon {
-  transform: translateX(2px) !important;
-}
-
-.mark-read-button:hover .button-icon-small {
-  transform: scale(1.1) !important;
-}
-
-/* Badge 样式优化 */
-:deep(.ant-badge-count) {
-  background: linear-gradient(135deg, #ff4757, #ff3742) !important;
-  border: 1px solid rgba(255, 255, 255, 0.2) !important;
-  box-shadow: 0 2px 8px rgba(255, 71, 87, 0.3) !important;
-  font-weight: var(--font-weight-semibold) !important;
+.empty-icon {
+  font-size: 48px;
+  color: rgba(255, 255, 255, 0.3);
+  margin-bottom: 12px;
 }
 
 /* 响应式设计 */
-@media (max-width: 1200px) {
-  .chart-row {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 1024px) {
-  .activity-section {
-    grid-template-columns: 1fr;
-  }
-  
-  .stats-grid {
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  }
-}
-
 @media (max-width: 768px) {
   .dashboard-header {
     flex-direction: column;
-    gap: var(--spacing-md);
-    align-items: flex-start;
+    align-items: stretch;
+    gap: 16px;
   }
-  
+
   .stats-grid {
     grid-template-columns: 1fr;
+    gap: 16px;
   }
-  
+
+  .chart-row {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .activity-section {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
   .quick-actions {
     grid-template-columns: 1fr;
   }
-  
-  .timeline-header {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  
-  .timeline-time {
-    margin-left: 0;
-  }
-  
-  .chart {
-    height: 280px;
-  }
-  
-  .card-header {
-    padding: var(--spacing-sm) var(--spacing-md);
-  }
-  
-  .notification-list,
-  .activity-timeline {
-    max-height: 300px;
-  }
-}
 
-@media (max-width: 480px) {
-  .dashboard-container {
-    padding: 0 var(--spacing-sm);
-  }
-  
-  .dashboard-header {
-    padding: var(--spacing-md);
-  }
-  
-  .page-title {
-    font-size: var(--font-size-2xl) !important;
-  }
-  
-  .stat-card {
-    padding: var(--spacing-md);
-  }
-  
-  .chart {
-    height: 220px;
-  }
-  
-  .notification-list,
-  .activity-timeline {
-    max-height: 250px;
-    padding: var(--spacing-md);
-  }
-  
   .action-card {
-    min-height: 100px;
-    padding: var(--spacing-md);
+    min-height: 120px;
+    padding: 24px;
   }
 }
 </style> 

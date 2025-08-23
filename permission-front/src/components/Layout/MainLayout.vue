@@ -149,7 +149,9 @@ const menuExpandState = ref<Record<string, boolean>>({
   'data-management': false,
   'security-audit': false,
   'overview': true,
-  'quick-actions': false
+  'workspace': true,
+  'security': true,
+  'system-health': false
 })
 
 // 侧边栏菜单配置 - 基于README设计
@@ -238,21 +240,43 @@ const getMenusByRoute = () => {
     return [
       {
         key: 'overview',
-        title: '总览',
+        title: '数据总览',
         icon: 'chart-pie',
         expanded: menuExpandState.value['overview'],
         children: [
           { path: '/dashboard/overview', title: '数据概览', icon: 'chart-bar' },
-          { path: '/dashboard/trends', title: '趋势分析', icon: 'chart-line' }
+          { path: '/dashboard/monitor', title: '系统监控', icon: 'desktop' },
+          { path: '/dashboard/trends', title: '访问趋势', icon: 'chart-line' }
         ]
       },
       {
-        key: 'quick-actions',
-        title: '快捷操作',
-        icon: 'bolt',
-        expanded: menuExpandState.value['quick-actions'],
+        key: 'workspace',
+        title: '工作管理',
+        icon: 'briefcase',
+        expanded: menuExpandState.value['workspace'],
         children: [
+          { path: '/dashboard/workspace', title: '工作台', icon: 'home' },
           { path: '/dashboard/shortcuts', title: '常用功能', icon: 'star' }
+        ]
+      },
+      {
+        key: 'security',
+        title: '安全管理',
+        icon: 'shield-alt',
+        expanded: menuExpandState.value['security'],
+        children: [
+          { path: '/dashboard/analytics', title: '权限分析', icon: 'chart-area' },
+          { path: '/dashboard/alerts', title: '安全告警', icon: 'exclamation-triangle' },
+          { path: '/dashboard/compliance', title: '合规审计', icon: 'balance-scale' }
+        ]
+      },
+      {
+        key: 'system-health',
+        title: '系统状态',
+        icon: 'heartbeat',
+        expanded: menuExpandState.value['system-health'],
+        children: [
+          { path: '/dashboard/health', title: '系统健康检查', icon: 'stethoscope' }
         ]
       }
     ]
@@ -698,7 +722,7 @@ watch(menuExpandState, (newState) => {
 .content {
   flex: 1;
   padding: 24px;
-  background: rgba(255, 255, 255, 0.02);
+  background: transparent;
   transition: all 0.3s ease;
 }
 

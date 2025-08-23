@@ -17,6 +17,15 @@ const router = createRouter({
       name: 'register',
       component: () => import('../views/RegisterView.vue'),
     },
+    {
+      path: '/test',
+      name: 'test',
+      component: () => import('../views/TestView.vue'),
+      meta: {
+        title: '权限测试',
+        requiresAuth: true
+      }
+    },
     // 主控制台
     {
       path: '/dashboard',
@@ -36,11 +45,11 @@ const router = createRouter({
           }
         },
         {
-          path: 'trends',
-          name: 'dashboard-trends',
-          component: () => import('../views/dashboard/TrendsView.vue'),
+          path: 'monitor',
+          name: 'dashboard-monitor',
+          component: () => import('../views/dashboard/MonitorView.vue'),
           meta: {
-            title: '趋势分析',
+            title: '系统监控',
             requiresAuth: true
           }
         },
@@ -50,6 +59,60 @@ const router = createRouter({
           component: () => import('../views/dashboard/ShortcutsView.vue'),
           meta: {
             title: '常用功能',
+            requiresAuth: true
+          }
+        },
+        {
+          path: 'analytics',
+          name: 'dashboard-analytics',
+          component: () => import('../views/dashboard/AnalyticsView.vue'),
+          meta: {
+            title: '权限分析',
+            requiresAuth: true
+          }
+        },
+        {
+          path: 'alerts',
+          name: 'dashboard-alerts',
+          component: () => import('../views/dashboard/AlertsView.vue'),
+          meta: {
+            title: '安全告警',
+            requiresAuth: true
+          }
+        },
+        {
+          path: 'trends',
+          name: 'dashboard-trends',
+          component: () => import('../views/dashboard/TrendsView.vue'),
+          meta: {
+            title: '访问趋势',
+            requiresAuth: true
+          }
+        },
+        {
+          path: 'workspace',
+          name: 'dashboard-workspace',
+          component: () => import('../views/dashboard/WorkspaceView.vue'),
+          meta: {
+            title: '工作台',
+            requiresAuth: true
+          }
+        },
+        {
+          path: 'health',
+          name: 'dashboard-health',
+          component: () => import('../views/dashboard/HealthView.vue'),
+          meta: {
+            title: '系统健康检查',
+            requiresAuth: true
+          }
+        },
+        {
+          path: 'compliance',
+          name: 'dashboard-compliance',
+          component: () => import('../views/dashboard/ComplianceView.vue'),
+          meta: {
+            title: '合规审计',
             requiresAuth: true
           }
         }
@@ -275,20 +338,71 @@ const router = createRouter({
           }
         }
       ]
+    },
+    // 错误页面
+    {
+      path: '/403',
+      name: 'forbidden',
+      component: () => import('../views/error/ForbiddenView.vue'),
+      meta: {
+        title: '访问被拒绝'
+      }
+    },
+    {
+      path: '/404',
+      name: 'not-found',
+      component: () => import('../views/error/NotFoundView.vue'),
+      meta: {
+        title: '页面未找到'
+      }
+    },
+    // 捕获所有未匹配的路由
+    {
+      path: '/:pathMatch(.*)*',
+      redirect: '/404'
     }
   ]
 })
 
 // 路由守卫
-router.beforeEach((to, from, next) => {
-  if (to.meta.requiresAuth) {
-    // TODO: 检查用户认证状态
-    // const token = localStorage.getItem('token')
-    // if (!token) {
-    //   next('/login')
-    //   return
-    // }
+router.beforeEach(async (to, from, next) => {
+  // 动态导入store避免循环依赖
+  const { useUserStore } = await import('@/stores/user')
+  const userStore = useUserStore()
+  
+  // 初始化认证状态（从localStorage恢复）
+  userStore.initializeAuth()
+  
+  // 如果是登录或注册页面，且已登录，跳转到dashboard
+  if ((to.name === 'login' || to.name === 'register') && userStore.isAuthenticated) {
+    next('/dashboard')
+    return
   }
+  
+  // 需要认证的页面
+  if (to.meta.requiresAuth) {
+    if (!userStore.isAuthenticated) {
+      next({
+        path: '/login',
+        query: { redirect: to.fullPath }
+      })
+      return
+    }
+    
+    // 检查权限（如果路由元数据中定义了权限要求）
+    if (to.meta.permissions) {
+      const permissions = Array.isArray(to.meta.permissions) 
+        ? to.meta.permissions 
+        : [to.meta.permissions]
+      
+      const hasPermission = userStore.hasPermission(permissions)
+      if (!hasPermission) {
+        next('/403')
+        return
+      }
+    }
+  }
+  
   next()
 })
 
