@@ -18,6 +18,10 @@ export { resourceApi }
 import { policyApi } from './policy'
 export { policyApi }
 
+// 属性管理API
+import { attributeApi } from './attribute'
+export { attributeApi }
+
 // 根据环境变量决定使用真实API还是模拟API
 const useMockApi = 'true'
 
@@ -40,6 +44,9 @@ export const api = {
 
   // 策略管理API
   policy: policyApi,
+
+  // 属性管理API
+  attribute: attributeApi,
 }
 
 // 默认导出

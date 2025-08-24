@@ -90,6 +90,7 @@
             </th>
             <th>用户信息</th>
             <th>用户组</th>
+            <th>用户属性</th>
             <th>状态</th>
             <th>最后登录</th>
             <th>创建时间</th>
@@ -139,6 +140,29 @@
               </div>
             </td>
             <td>
+              <div class="user-attributes">
+                <template v-if="user.attributes && user.attributes.length > 0">
+                  <span 
+                    v-for="(attr, index) in user.attributes.slice(0, 2)" 
+                    :key="index"
+                    class="attribute-tag"
+                    :title="`${attr.name}: ${attr.value}`"
+                  >
+                    {{ attr.name }}
+                  </span>
+                  <span 
+                    v-if="user.attributes.length > 2" 
+                    class="attribute-count"
+                    @mouseenter="showAttributeTooltip($event, user.attributes)"
+                    @mouseleave="hideAttributeTooltip"
+                  >
+                    +{{ user.attributes.length - 2 }}
+                  </span>
+                </template>
+                <span v-else class="no-attributes">无属性</span>
+              </div>
+            </td>
+            <td>
               <span :class="['status-badge', user.status]">
                 <font-awesome-icon 
                   :icon="user.status === 'active' ? 'check-circle' : 'times-circle'" 
@@ -171,6 +195,14 @@
                   title="编辑"
                 >
                   <font-awesome-icon icon="edit" />
+                </button>
+                <button 
+                  class="action-icon attribute" 
+                  @click="manageUserAttributes(user)"
+                  :disabled="operatingUsers.has(user.id)"
+                  title="属性管理"
+                >
+                  <font-awesome-icon icon="tags" />
                 </button>
                 <button 
                   class="action-icon toggle" 
@@ -270,6 +302,22 @@
       </div>
     </div>
 
+    <!-- 属性悬浮提示 -->
+    <div 
+      v-if="attributeTooltipVisible" 
+      class="attribute-tooltip" 
+      :style="{ left: attributeTooltipPosition.x + 'px', top: attributeTooltipPosition.y + 'px' }"
+    >
+      <div class="tooltip-content">
+        <h4>用户属性列表</h4>
+        <ul>
+          <li v-for="attr in tooltipAttributes" :key="attr.code">
+            <strong>{{ attr.name }}:</strong> {{ attr.value }}
+          </li>
+        </ul>
+      </div>
+    </div>
+
     <!-- 用户模态框 -->
     <UserModal
       v-if="showAddUserModal || showEditUserModal"
@@ -279,6 +327,15 @@
       :loading="submitting"
       @submit="handleUserSubmit"
       @close="handleCloseUserModal"
+    />
+
+    <!-- 用户属性管理弹窗 -->
+    <UserAttributeModal 
+      v-if="showAttributeModal"
+      :visible="showAttributeModal"
+      :user="currentUser"
+      @close="showAttributeModal = false"
+      @success="loadUsers"
     />
 
     <!-- 确认模态框 -->
@@ -308,6 +365,7 @@ import ConfirmModal from '@/components/Common/ConfirmModal.vue'
 import ImportModal from '@/components/User/ImportModal.vue'
 import { api } from '@/api'
 import type { User, UserSearchParams, UserCreateRequest, UserUpdateRequest } from '@/types'
+import UserAttributeModal from '@/components/User/UserAttributeModal.vue'
 
 const router = useRouter()
 
@@ -328,6 +386,7 @@ const showAddUserModal = ref(false)
 const showEditUserModal = ref(false)
 const showConfirmModal = ref(false)
 const showImportModal = ref(false)
+const showAttributeModal = ref(false)
 const currentUser = ref<User | null>(null)
 
 // 用户数据
@@ -342,6 +401,9 @@ const pagination = reactive({
 const tooltipVisible = ref(false)
 const tooltipPosition = ref({ x: 0, y: 0 })
 const tooltipGroups = ref<string[]>([])
+const attributeTooltipVisible = ref(false)
+const attributeTooltipPosition = ref({ x: 0, y: 0 })
+const tooltipAttributes = ref<any[]>([])
 
 // 默认头像
 const defaultAvatar = `data:image/svg+xml;charset=UTF-8,%3csvg width='48' height='48' viewBox='0 0 48 48' fill='none' xmlns='http://www.w3.org/2000/svg'%3e%3ccircle cx='24' cy='24' r='24' fill='url(%23gradient0_linear_1_1)'/%3e%3ccircle cx='24' cy='19' r='7' fill='white' fill-opacity='0.9'/%3e%3cpath d='M12 38C12 31.3726 17.3726 26 24 26C30.6274 26 36 31.3726 36 38V38H12Z' fill='white' fill-opacity='0.9'/%3e%3cdefs%3e%3clinearGradient id='gradient0_linear_1_1' x1='0' y1='0' x2='48' y2='48' gradientUnits='userSpaceOnUse'%3e%3cstop stop-color='%2300EEFF'/%3e%3cstop offset='0.5' stop-color='%2300AACC'/%3e%3cstop offset='1' stop-color='%23007799'/%3e%3c/linearGradient%3e%3c/defs%3e%3c/svg%3e`
@@ -447,6 +509,21 @@ const showGroupTooltip = (event: MouseEvent, groups: string[]) => {
 
 const hideGroupTooltip = () => {
   tooltipVisible.value = false
+}
+
+const showAttributeTooltip = (event: MouseEvent, attributes: any[]) => {
+  tooltipAttributes.value = attributes
+  attributeTooltipPosition.value = { x: event.pageX + 10, y: event.pageY + 10 }
+  attributeTooltipVisible.value = true
+}
+
+const hideAttributeTooltip = () => {
+  attributeTooltipVisible.value = false
+}
+
+const manageUserAttributes = (user: User) => {
+  currentUser.value = user
+  showAttributeModal.value = true
 }
 
 const viewUserDetail = (user: User) => {
@@ -1003,6 +1080,52 @@ const handleCloseUserModal = () => {
   border: 1px solid rgba(158, 158, 158, 0.2);
 }
 
+/* 用户属性 */
+.user-attributes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.attribute-tag {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  background: rgba(0, 238, 255, 0.15);
+  color: #00eeff;
+  border: 1px solid rgba(0, 238, 255, 0.3);
+  white-space: nowrap;
+}
+
+.attribute-count {
+  padding: 4px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  cursor: help;
+  white-space: nowrap;
+}
+
+.attribute-count:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.no-attributes {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  background: rgba(158, 158, 158, 0.15);
+  color: rgba(158, 158, 158, 0.8);
+  border: 1px solid rgba(158, 158, 158, 0.2);
+}
+
 .status-badge {
   display: inline-flex;
   align-items: center;
@@ -1067,6 +1190,12 @@ const handleCloseUserModal = () => {
   background: rgba(0, 238, 255, 0.1);
   color: #00eeff;
   border-color: #00eeff;
+}
+
+.action-icon.attribute:hover {
+  background: rgba(255, 193, 7, 0.1);
+  color: #ffc107;
+  border-color: #ffc107;
 }
 
 .action-icon.toggle:hover {
@@ -1159,7 +1288,8 @@ const handleCloseUserModal = () => {
  }
 
 /* 悬浮提示 */
-.group-tooltip {
+.group-tooltip,
+.attribute-tooltip {
   position: fixed;
   z-index: 1000;
   background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);

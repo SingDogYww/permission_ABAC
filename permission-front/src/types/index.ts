@@ -103,18 +103,20 @@ export interface PolicyRule {
   }
 }
 
-// 策略定义
+// 策略定义 - 更新为ABAC策略格式
 export interface Policy {
-  id: string
+  id: number
   name: string
   description?: string
-  version: string
-  status: 'active' | 'inactive' | 'draft'
-  target: PolicyTarget
-  rules: PolicyRule[]
+  subjectAttributes: Record<string, any>
+  objectAttributes: Record<string, any>
+  actionAttributes: Record<string, any>
+  environmentAttributes: Record<string, any>
+  effect: 'PERMIT' | 'DENY'
   priority: number
-  createdAt: string
-  updatedAt: string
+  status: number // 1-启用，0-禁用
+  createTime: string
+  updateTime: string
 }
 
 // 策略搜索参数
@@ -125,26 +127,40 @@ export interface PolicySearchParams extends SearchParams {
 
 // 权限评估请求
 export interface PermissionEvaluationRequest {
+  userId: string
   subject: {
-    id: string
     attributes: Record<string, any>
   }
   resource: {
     id: string
     attributes: Record<string, any>
   }
-  action: string
-  environment: Record<string, any>
+  action: {
+    type: string
+    attributes: Record<string, any>
+  }
+  environment: {
+    ipAddress?: string
+    userAgent?: string
+    location?: string
+    timestamp?: string
+  }
+  resourceId: string
+  actionType: string
 }
 
 // 权限评估结果
 export interface PermissionEvaluationResult {
-  decision: 'permit' | 'deny' | 'indeterminate'
-  reasons: string[]
-  matchedPolicies: string[]
-  evaluationTime: string
-  obligations?: any[]
-  advice?: any[]
+  decision: 'PERMIT' | 'DENY' | 'INDETERMINATE'
+  reason: string
+  appliedPolicies: Array<{
+    policyId: string
+    policyName: string
+    effect: 'PERMIT' | 'DENY'
+  }>
+  evaluationTime: number
+  obligations?: string[]
+  advice?: string[]
 }
 
 // 资源类型定义

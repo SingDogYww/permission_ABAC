@@ -26,6 +26,15 @@ const router = createRouter({
         requiresAuth: true
       }
     },
+    {
+      path: '/test-editor',
+      name: 'test-editor',
+      component: () => import('../views/TestAdvancedEditor.vue'),
+      meta: {
+        title: '高级编辑器测试',
+        requiresAuth: false
+      }
+    },
     // 主控制台
     {
       path: '/dashboard',
@@ -164,11 +173,29 @@ const router = createRouter({
         },
         // 权限控制
         {
+          path: 'attributes',
+          name: 'permission-attributes',
+          component: () => import('../views/permission/AttributesView.vue'),
+          meta: {
+            title: '属性管理',
+            requiresAuth: true
+          }
+        },
+        {
           path: 'policies',
           name: 'permission-policies',
           component: () => import('../views/permission/PoliciesView.vue'),
           meta: {
             title: '权限策略',
+            requiresAuth: true
+          }
+        },
+        {
+          path: 'policy-test',
+          name: 'permission-policy-test',
+          component: () => import('../views/permission/PolicyTestView.vue'),
+          meta: {
+            title: '策略测试',
             requiresAuth: true
           }
         },
@@ -187,6 +214,24 @@ const router = createRouter({
           component: () => import('../views/permission/MatrixView.vue'),
           meta: {
             title: '权限矩阵',
+            requiresAuth: true
+          }
+        },
+        {
+          path: 'api-permissions',
+          name: 'permission-api-permissions',
+          component: () => import('../views/permission/ApiPermissionsView.vue'),
+          meta: {
+            title: 'API权限',
+            requiresAuth: true
+          }
+        },
+        {
+          path: 'data-permissions',
+          name: 'permission-data-permissions',
+          component: () => import('../views/permission/DataPermissionsView.vue'),
+          meta: {
+            title: '数据权限',
             requiresAuth: true
           }
         },
@@ -338,6 +383,15 @@ const router = createRouter({
           }
         }
       ]
+    },
+    // 帮助页面
+    {
+      path: '/help/abac-attributes',
+      name: 'abac-attributes-help',
+      component: () => import('../views/help/AbacAttributesHelpView.vue'),
+      meta: {
+        title: 'ABAC属性类型说明'
+      }
     },
     // 错误页面
     {

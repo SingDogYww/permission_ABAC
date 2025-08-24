@@ -93,7 +93,7 @@
                   :key="child.path"
                   :to="child.path"
                   class="nav-link"
-                  :class="{ active: $route.path === child.path }"
+                  :class="{ active: $route.path === child.path || $route.path.startsWith(child.path + '/') }"
                 >
                   <div class="nav-link-content">
                     <div class="nav-link-main">
@@ -144,10 +144,10 @@ const mainNavItems = [
 const menuExpandState = ref<Record<string, boolean>>({
   'user-management': true,
   'permission-control': true,
+  'security-audit': true,
   'system-config': true,
   'system-monitor': false,
   'data-management': false,
-  'security-audit': false,
   'overview': true,
   'workspace': true,
   'security': true,
@@ -177,9 +177,24 @@ const getMenusByRoute = () => {
         icon: 'shield-alt',
         expanded: menuExpandState.value['permission-control'],
         children: [
+          { path: '/permission/attributes', title: '属性管理', icon: 'tags' },
           { path: '/permission/policies', title: '权限策略', icon: 'scroll' },
+          { path: '/permission/policy-test', title: '策略测试', icon: 'vial' },
           { path: '/permission/resources', title: '资源管理', icon: 'sitemap' },
-          { path: '/permission/matrix', title: '权限矩阵', icon: 'table' }
+          { path: '/permission/matrix', title: '权限矩阵', icon: 'table' },
+          { path: '/permission/api-permissions', title: 'API权限', icon: 'code' },
+          { path: '/permission/data-permissions', title: '数据权限', icon: 'database' }
+        ]
+      },
+      {
+        key: 'security-audit',
+        title: '安全审计',
+        icon: 'eye',
+        expanded: menuExpandState.value['security-audit'],
+        children: [
+          { path: '/permission/audit', title: '操作日志', icon: 'history' },
+          { path: '/permission/login-logs', title: '登录日志', icon: 'sign-in-alt' },
+          { path: '/permission/security', title: '安全监控', icon: 'shield-virus' }
         ]
       }
     ]
